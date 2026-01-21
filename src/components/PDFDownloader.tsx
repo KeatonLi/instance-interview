@@ -1,81 +1,65 @@
 import { useState } from 'react';
-import type { RefObject } from 'react';
-import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
 import { Button } from '@/components/ui/button';
 import { Download, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
+import type { ResumeData } from '@/types/resume';
 
 interface PDFDownloaderProps {
-  resumeRef: RefObject<HTMLDivElement | null>;
+  resumeData: ResumeData;
   filename?: string;
 }
 
 type ExportStatus = 'idle' | 'generating' | 'success' | 'error';
 
-const PDFDownloader: React.FC<PDFDownloaderProps> = ({ resumeRef, filename = 'resume' }) => {
+const PDFDownloader: React.FC<PDFDownloaderProps> = ({ resumeData, filename = 'resume' }) => {
   const [status, setStatus] = useState<ExportStatus>('idle');
   const [progress, setProgress] = useState(0);
+  const [errorMessage, setErrorMessage] = useState('');
 
   const downloadPDF = async () => {
-    if (!resumeRef.current || status === 'generating') return;
+    if (status === 'generating') return;
 
     setStatus('generating');
     setProgress(10);
+    setErrorMessage('');
 
     try {
-      // Step 1: 准备渲染
+      // 动态导入PDF库
       setProgress(20);
-      await new Promise(resolve => setTimeout(resolve, 100));
+      const { pdf } = await import('@react-pdf/renderer');
+      const { default: ResumePDF } = await import('./ResumePDF');
 
-      // Step 2: 生成Canvas
-      setProgress(40);
-      const canvas = await html2canvas(resumeRef.current, {
-        scale: 3,
-        useCORS: true,
-        logging: false,
-        windowWidth: resumeRef.current.scrollWidth,
-        windowHeight: resumeRef.current.scrollHeight,
-        backgroundColor: '#ffffff',
-      });
+      // Step 1: 准备文档
+      setProgress(30);
+      const doc = <ResumePDF data={resumeData} />;
 
-      // Step 3: 转换图片
+      // Step 2: 生成PDF blob
       setProgress(60);
-      const imgData = canvas.toDataURL('image/png', 1.0);
+      const blob = await pdf(doc).toBlob();
 
-      // Step 4: 创建PDF
-      setProgress(80);
-      const pdf = new jsPDF('p', 'mm', 'a4');
+      // Step 3: 创建下载链接
+      setProgress(90);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${filename}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
 
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
-
-      const imgWidth = canvas.width;
-      const imgHeight = canvas.height;
-
-      const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
-
-      const imgX = (pdfWidth - imgWidth * ratio) / 2;
-      const imgY = 0;
-
-      pdf.addImage(
-        imgData,
-        'PNG',
-        imgX,
-        imgY,
-        imgWidth * ratio,
-        imgHeight * ratio
-      );
-
-      // Step 5: 保存文件
+      // 完成
       setProgress(100);
-      pdf.save(`${filename}.pdf`);
-
       setStatus('success');
       setTimeout(() => setStatus('idle'), 2000);
     } catch (error) {
       console.error('Error generating PDF:', error);
+      const errorMsg = error instanceof Error ? error.message : '未知错误';
+      setErrorMessage(`PDF生成失败: ${errorMsg}`);
       setStatus('error');
-      setTimeout(() => setStatus('idle'), 3000);
+      setTimeout(() => {
+        setStatus('idle');
+        setErrorMessage('');
+      }, 5000);
     }
   };
 
@@ -113,9 +97,8 @@ const PDFDownloader: React.FC<PDFDownloaderProps> = ({ resumeRef, filename = 're
   };
 
   const getButtonVariant = () => {
-    if (status === 'success') return 'success';
     if (status === 'error') return 'destructive';
-    return 'default';
+    return status === 'success' ? 'default' : 'outline';
   };
 
   return (
@@ -136,8 +119,8 @@ const PDFDownloader: React.FC<PDFDownloaderProps> = ({ resumeRef, filename = 're
           />
         </div>
       )}
-      {status === 'error' && (
-        <p className="text-xs text-red-500 text-center">生成PDF时出错，请检查内容后重试</p>
+      {status === 'error' && errorMessage && (
+        <p className="text-xs text-red-500 text-center break-words">{errorMessage}</p>
       )}
     </div>
   );

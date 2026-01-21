@@ -205,7 +205,7 @@ function App() {
           /* Preview Mode - Full Page Preview */
           <div className="flex flex-col items-center space-y-6">
             <div className="w-full max-w-md">
-              <PDFDownloader resumeRef={resumeRef} filename={`${resumeData.personalInfo.name || 'resume'}`} />
+              <PDFDownloader resumeData={resumeData} filename={`${resumeData.personalInfo.name || 'resume'}`} />
             </div>
             <div className="w-full flex justify-center bg-slate-200/50 rounded-lg p-4">
               <div ref={resumeRef} className="transform scale-90 origin-top">
@@ -245,7 +245,7 @@ function App() {
                       <p className="text-xs text-slate-500 mt-1">最终导出效果</p>
                     </div>
                     <div className="w-40">
-                      <PDFDownloader resumeRef={resumeRef} filename={`${resumeData.personalInfo.name || 'resume'}`} />
+                      <PDFDownloader resumeData={resumeData} filename={`${resumeData.personalInfo.name || 'resume'}`} />
                     </div>
                   </div>
                 </CardHeader>
