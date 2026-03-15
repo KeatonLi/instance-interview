@@ -4,7 +4,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { resumeApi } from '@/lib/resumes';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader } from '@/components/ui/card';
-import { FileText, Sparkles, Eye, Edit, RotateCcw, Save, Loader2, ArrowLeft } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { FileText, Sparkles, Eye, Edit, RotateCcw, Save, Loader2, ArrowLeft, Pencil } from 'lucide-react';
 import type { ResumeData } from '@/types/resume';
 import { defaultResumeData } from '@/types/resume';
 import ResumeForm from '@/components/ResumeForm';
@@ -15,7 +16,9 @@ const EditorPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
   const navigate = useNavigate();
-  
+
+  const [resumeTitle, setResumeTitle] = useState('我的简历');
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [resumeData, setResumeData] = useState<ResumeData>(defaultResumeData);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -35,6 +38,7 @@ const EditorPage: React.FC = () => {
       const res = await resumeApi.getResume(resumeId);
       // 解析后端返回的 JSON 字符串字段
       const resume = res.data;
+      setResumeTitle(resume.title || '我的简历');
       setResumeData({
         personalInfo: resume.personal_info ? JSON.parse(resume.personal_info) : {},
         education: resume.education ? JSON.parse(resume.education) : [],
@@ -53,16 +57,17 @@ const EditorPage: React.FC = () => {
 
   const handleSave = async () => {
     if (!user) return;
-    
+
     setSaving(true);
     try {
       if (id) {
         await resumeApi.updateResume(parseInt(id), {
+          title: resumeTitle,
           resume_data: resumeData,
         });
       } else {
         const res = await resumeApi.createResume({
-          title: resumeData.personalInfo.name || '我的简历',
+          title: resumeTitle || resumeData.personalInfo.name || '我的简历',
           user_id: user.id,
           resume_data: resumeData,
         });
@@ -74,6 +79,24 @@ const EditorPage: React.FC = () => {
       console.error('Failed to save resume:', error);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setResumeTitle(e.target.value);
+    setHasChanges(true);
+  };
+
+  const handleTitleBlur = async () => {
+    setIsEditingTitle(false);
+    if (id && resumeTitle) {
+      try {
+        await resumeApi.updateResume(parseInt(id), {
+          title: resumeTitle,
+        });
+      } catch (error) {
+        console.error('Failed to update title:', error);
+      }
     }
   };
 
@@ -207,7 +230,24 @@ const EditorPage: React.FC = () => {
                 <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center">
                   <FileText className="w-5 h-5 text-white" />
                 </div>
-                <h1 className="text-xl font-bold text-slate-800">Poker</h1>
+                {isEditingTitle ? (
+                  <Input
+                    value={resumeTitle}
+                    onChange={handleTitleChange}
+                    onBlur={handleTitleBlur}
+                    onKeyDown={(e) => e.key === 'Enter' && handleTitleBlur()}
+                    autoFocus
+                    className="h-8 w-48"
+                  />
+                ) : (
+                  <div
+                    className="flex items-center space-x-2 cursor-pointer hover:bg-slate-100 rounded px-2 py-1"
+                    onClick={() => setIsEditingTitle(true)}
+                  >
+                    <h1 className="text-xl font-bold text-slate-800">{resumeTitle}</h1>
+                    <Pencil className="w-4 h-4 text-slate-400" />
+                  </div>
+                )}
               </div>
             </div>
             <div className="flex items-center space-x-2">

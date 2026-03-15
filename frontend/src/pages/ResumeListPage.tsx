@@ -1,17 +1,47 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import { resumeApi } from '@/lib/resumes';
 import type { Resume } from '@/lib/resumes';
+import type { ResumeData } from '@/types/resume';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { FileText, Plus, Loader2, LogOut, Trash2 } from 'lucide-react';
+import { Plus, Loader2, Trash2, Eye, Edit, FileText } from 'lucide-react';
+import Navbar from '@/components/Navbar';
+import ResumePreview from '@/components/ResumePreview';
+import PDFDownloader from '@/components/PDFDownloader';
+
+// 解析简历数据
+const parseResumeData = (resume: Resume): ResumeData => {
+  try {
+    return {
+      personalInfo: resume.personal_info ? JSON.parse(resume.personal_info) : {},
+      education: resume.education ? JSON.parse(resume.education) : [],
+      workExperience: resume.work_experience ? JSON.parse(resume.work_experience) : [],
+      projects: resume.projects ? JSON.parse(resume.projects) : [],
+      skills: resume.skills ? JSON.parse(resume.skills) : [],
+      awards: resume.awards ? JSON.parse(resume.awards) : [],
+      languages: resume.languages ? JSON.parse(resume.languages) : [],
+    };
+  } catch {
+    return {
+      personalInfo: {},
+      education: [],
+      workExperience: [],
+      projects: [],
+      skills: [],
+      awards: [],
+      languages: [],
+    };
+  }
+};
 
 export default function ResumeListPage() {
-  const { user, logout } = useAuth();
   const [resumes, setResumes] = useState<Resume[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<number | null>(null);
+  const [previewResume, setPreviewResume] = useState<Resume | null>(null);
+  const [previewData, setPreviewData] = useState<ResumeData | null>(null);
+  const [loadingPreview, setLoadingPreview] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -33,7 +63,6 @@ export default function ResumeListPage() {
     try {
       const res = await resumeApi.createResume({
         title: '我的新简历',
-        user_id: user!.id,
       });
       navigate(`/editor/${res.data.id}`);
     } catch (error) {
@@ -42,7 +71,7 @@ export default function ResumeListPage() {
   };
 
   const handleDeleteResume = async (id: number) => {
-    if (!confirm('确定要删除这份简历吗？')) return;    
+    if (!confirm('确定要删除这份简历吗？')) return;
     setDeleting(id);
     try {
       await resumeApi.deleteResume(id);
@@ -54,37 +83,42 @@ export default function ResumeListPage() {
     }
   };
 
+  const handlePreview = async (resume: Resume) => {
+    setPreviewResume(resume);
+    setLoadingPreview(true);
+    try {
+      const res = await resumeApi.getResume(resume.id);
+      const data = res.data;
+      setPreviewData({
+        personalInfo: data.personal_info ? JSON.parse(data.personal_info) : {},
+        education: data.education ? JSON.parse(data.education) : [],
+        workExperience: data.work_experience ? JSON.parse(data.work_experience) : [],
+        projects: data.projects ? JSON.parse(data.projects) : [],
+        skills: data.skills ? JSON.parse(data.skills) : [],
+        awards: data.awards ? JSON.parse(data.awards) : [],
+        languages: data.languages ? JSON.parse(data.languages) : [],
+      });
+    } catch (error) {
+      console.error('Failed to load preview:', error);
+    } finally {
+      setLoadingPreview(false);
+    }
+  };
+
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+      <div className="min-h-screen">
+        <Navbar />
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+        </div>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-100">
-      <header className="bg-white/80 backdrop-blur-md shadow-sm border-b border-slate-200">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-3">
-              <Link to="/resumes" className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center">
-                  <FileText className="w-5 h-5 text-white" />
-                </div>
-                <h1 className="text-xl font-bold text-slate-800">Poker</h1>
-              </Link>
-            </div>
-            <div className="flex items-center space-x-4">
-              <span className="text-sm text-slate-600">{user?.email || user?.username}</span>
-              <Button variant="ghost" size="sm" onClick={logout}>
-                <LogOut className="w-4 h-4 mr-2" />
-                退出
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
+      <Navbar />
 
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex justify-between items-center mb-8">
@@ -112,21 +146,24 @@ export default function ResumeListPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {resumes.map((resume) => (
+            {resumes.map((resume) => {
+              const resumeData = parseResumeData(resume);
+              return (
               <Card key={resume.id} className="hover:shadow-lg transition-shadow cursor-pointer group">
                 <CardContent className="p-0">
-                  <div 
-                    className="h-40 bg-gradient-to-br from-slate-100 to-slate-200 rounded-t-xl flex items-center justify-center"
-                    onClick={() => navigate(`/editor/${resume.id}`)}
+                  {/* PDF 预览缩略图 */}
+                  <div
+                    className="bg-white rounded-t-xl overflow-hidden cursor-pointer"
+                    onClick={() => handlePreview(resume)}
+                    style={{ height: '220px', overflow: 'hidden' }}
                   >
-                    <FileText className="w-16 h-16 text-slate-300" />
+                    <div style={{ transform: 'scale(0.25)', transformOrigin: 'top left', width: '400%' }}>
+                      <ResumePreview data={resumeData} />
+                    </div>
                   </div>
-                  <div className="p-4">
+                  <div className="p-4 border-t">
                     <div className="flex justify-between items-start">
-                      <div 
-                        className="flex-1 cursor-pointer"
-                        onClick={() => navigate(`/editor/${resume.id}`)}
-                      >
+                      <div className="flex-1">
                         <h3 className="font-semibold text-slate-800 group-hover:text-blue-600 transition-colors">
                           {resume.title}
                         </h3>
@@ -134,6 +171,30 @@ export default function ResumeListPage() {
                           {new Date(resume.updated_at).toLocaleDateString('zh-CN')}
                         </p>
                       </div>
+                    </div>
+                    <div className="flex gap-2 mt-3">
+                      <Button
+                        className="flex-1"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/editor/${resume.id}`);
+                        }}
+                      >
+                        <Edit className="w-4 h-4 mr-1" />
+                        编辑
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handlePreview(resume);
+                        }}
+                      >
+                        <Eye className="w-4 h-4 mr-1" />
+                        预览
+                      </Button>
                       <Button
                         variant="ghost"
                         size="sm"
@@ -154,10 +215,41 @@ export default function ResumeListPage() {
                   </div>
                 </CardContent>
               </Card>
-            ))}
+              );
+            })}
           </div>
         )}
       </main>
+
+      {/* Preview Modal */}
+      {previewResume && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+            <div className="flex items-center justify-between p-4 border-b">
+              <h3 className="text-lg font-semibold">{previewResume.title} - 预览</h3>
+              <div className="flex items-center gap-2">
+                {previewData && (
+                  <PDFDownloader resumeData={previewData} filename={previewResume.title} />
+                )}
+                <Button variant="ghost" onClick={() => setPreviewResume(null)}>
+                  关闭
+                </Button>
+              </div>
+            </div>
+            <div className="p-4 overflow-auto max-h-[calc(90vh-80px)]">
+              {loadingPreview ? (
+                <div className="flex items-center justify-center py-20">
+                  <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+                </div>
+              ) : previewData ? (
+                <ResumePreview data={previewData} />
+              ) : (
+                <div className="text-center py-10 text-slate-500">无法加载预览</div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

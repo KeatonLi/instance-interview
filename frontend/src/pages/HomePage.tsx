@@ -1,15 +1,13 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { FileText, Sparkles, Download, Code, Bot, User } from 'lucide-react';
+import { FileText, Sparkles, Download, Code, Bot } from 'lucide-react';
+import Navbar from '@/components/Navbar';
 
 const HomePage: React.FC = () => {
-  const { user, guestLogin } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [guestLoading, setGuestLoading] = useState(false);
 
   const handleStart = () => {
     if (user) {
@@ -19,88 +17,11 @@ const HomePage: React.FC = () => {
     }
   };
 
-  const handleGuestLogin = async () => {
-    setGuestLoading(true);
-    try {
-      await guestLogin();
-      navigate('/resumes');
-    } catch (error) {
-      console.error('Guest login failed:', error);
-    } finally {
-      setGuestLoading(false);
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100">
-      <header className="bg-white/80 backdrop-blur-md shadow-sm border-b border-blue-100 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/30">
-                <FileText className="w-5 h-5 text-white" />
-              </div>
-              <h1 className="text-xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">
-                Poker
-              </h1>
-            </div>
-            <div className="hidden md:flex items-center space-x-6">
-              <a href="#features" className="text-slate-600 hover:text-blue-600 transition-colors font-medium">
-                功能
-              </a>
-              <a href="#tech" className="text-slate-600 hover:text-blue-600 transition-colors font-medium">
-                技术栈
-              </a>
-              <a href="#about" className="text-slate-600 hover:text-blue-600 transition-colors font-medium">
-                关于
-              </a>
-              {user ? (
-                <Button onClick={handleStart}>
-                  我的简历
-                </Button>
-              ) : (
-                <div className="flex items-center space-x-3">
-                  <Button variant="ghost" onClick={handleGuestLogin}>
-                    游客登录
-                  </Button>
-                  <Button onClick={handleStart}>
-                    开始创建
-                  </Button>
-                </div>
-              )}
-            </div>
-            <button
-              className="md:hidden p-2"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            >
-              {mobileMenuOpen ? <span>X</span> : <span>Menu</span>}
-            </button>
-          </div>
-        </div>
-        {mobileMenuOpen && (
-          <div className="md:hidden bg-white border-t border-blue-100 px-4 py-4 space-y-3">
-            <a href="#features" className="block text-slate-600">功能</a>
-            <a href="#tech" className="block text-slate-600">技术栈</a>
-            <a href="#about" className="block text-slate-600">关于</a>
-            {user ? (
-              <Button onClick={handleStart} className="w-full">
-                我的简历
-              </Button>
-            ) : (
-              <div className="space-y-2">
-                <Button variant="outline" onClick={handleGuestLogin} className="w-full">
-                  游客登录
-                </Button>
-                <Button onClick={handleStart} className="w-full">
-                  开始创建
-                </Button>
-              </div>
-            )}
-          </div>
-        )}
-      </header>
+      <Navbar />
 
-      <section className="pt-24 pb-16 px-4">
+      <section className="pt-12 pb-16 px-4">
         <div className="max-w-7xl mx-auto text-center">
           <div className="inline-flex items-center px-4 py-2 rounded-full bg-blue-50 border border-blue-200 text-blue-600 text-sm mb-8">
             <Sparkles className="w-4 h-4 mr-2" />
@@ -122,9 +43,9 @@ const HomePage: React.FC = () => {
               立即开始
             </Button>
             {!user && (
-              <Button size="lg" variant="outline" onClick={handleGuestLogin} disabled={guestLoading} className="text-lg px-8 py-6 h-auto">
-                <User className="mr-2 w-5 h-5" />
-                游客体验
+              <Button size="lg" variant="outline" onClick={() => navigate('/login')} className="text-lg px-8 py-6 h-auto">
+                <Sparkles className="mr-2 w-5 h-5" />
+                立即登录
               </Button>
             )}
           </div>
@@ -176,7 +97,7 @@ const HomePage: React.FC = () => {
         <div className="max-w-7xl mx-auto">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div>
-              <h2 className="text-3xl font-bold text-slate-800 mb-6">为什么选择 Poker？</h2>
+              <h2 className="text-3xl font-bold text-slate-800 mb-6">为什么选择 简历大师？</h2>
               <div className="space-y-6">
                 {[
                   { icon: <Code className="w-5 h-5" />, title: '专为程序员设计', desc: '深入了解互联网技术岗位需求，帮你更好地展示技术能力和项目经验' },
@@ -219,10 +140,10 @@ const HomePage: React.FC = () => {
             <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center">
               <FileText className="w-4 h-4 text-white" />
             </div>
-            <span className="text-lg font-bold text-slate-800">Poker</span>
+            <span className="text-lg font-bold text-slate-800">简历大师</span>
           </div>
           <p className="text-slate-500 text-sm">
-            © 2026 Poker. 专为程序员打造的简历生成器。
+            © 2026 简历大师. 专为程序员打造的简历生成器。
           </p>
         </div>
       </footer>

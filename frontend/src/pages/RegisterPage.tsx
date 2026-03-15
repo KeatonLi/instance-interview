@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { FileText, Loader2 } from 'lucide-react';
+import Navbar from '@/components/Navbar';
 
 export default function RegisterPage() {
   const [username, setUsername] = useState('');
@@ -38,13 +39,16 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-100 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-100">
+      <Navbar showNav={false} />
+
+      <div className="flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="mx-auto w-12 h-12 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center mb-4">
             <FileText className="w-6 h-6 text-white" />
           </div>
-          <CardTitle className="text-2xl">注册 Poker</CardTitle>
+          <CardTitle className="text-2xl">注册 简历大师</CardTitle>
           <CardDescription>创建账号开始管理你的简历</CardDescription>
         </CardHeader>
         <CardContent>
@@ -135,6 +139,7 @@ export default function RegisterPage() {
           </div>
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 }

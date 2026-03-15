@@ -6,6 +6,13 @@ export interface Resume {
   title: string;
   resume_type: string;
   status: string;
+  personal_info: string;
+  education: string;
+  work_experience: string;
+  projects: string;
+  skills: string;
+  awards: string;
+  languages: string;
   created_at: string;
   updated_at: string;
 }

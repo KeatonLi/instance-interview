@@ -3,7 +3,8 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { FileText, Loader2, User } from 'lucide-react';
+import { FileText, Loader2, User, ArrowLeft } from 'lucide-react';
+import Navbar from '@/components/Navbar';
 
 export default function LoginPage() {
   const [username, setUsername] = useState('');
@@ -44,13 +45,16 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-100 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-100">
+      <Navbar showNav={false} />
+
+      <div className="flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="mx-auto w-12 h-12 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center mb-4">
             <FileText className="w-6 h-6 text-white" />
           </div>
-          <CardTitle className="text-2xl">登录 Poker</CardTitle>
+          <CardTitle className="text-2xl">登录 简历大师</CardTitle>
           <CardDescription>登录后管理你的简历</CardDescription>
         </CardHeader>
         <CardContent>
@@ -113,6 +117,7 @@ export default function LoginPage() {
           </div>
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 }

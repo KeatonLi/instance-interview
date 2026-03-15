@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import {
@@ -9,7 +10,6 @@ import {
   Edit,
   RotateCcw,
   Code,
-  Layout,
   Bot,
   Menu,
   X,
@@ -19,8 +19,11 @@ import { defaultResumeData } from '@/types/resume';
 import ResumeForm from '@/components/ResumeForm';
 import ResumePreview from '@/components/ResumePreview';
 import PDFDownloader from '@/components/PDFDownloader';
+import { useAuth } from '@/contexts/AuthContext';
 
 const LandingPage: React.FC = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [showEditor, setShowEditor] = useState(false);
   const [resumeData, setResumeData] = useState<ResumeData>(defaultResumeData);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
@@ -162,12 +165,19 @@ const LandingPage: React.FC = () => {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center h-16">
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/30">
-                  <FileText className="w-5 h-5 text-white" />
+                <Button variant="ghost" size="sm" onClick={() => setShowEditor(false)}>
+                  <FileText className="w-4 h-4 mr-2" />
+                  返回
+                </Button>
+                <div className="h-6 w-px bg-slate-300" />
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/30">
+                    <FileText className="w-5 h-5 text-white" />
+                  </div>
+                  <h1 className="text-xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">
+                    简历大师
+                  </h1>
                 </div>
-                <h1 className="text-xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">
-                  Poker
-                </h1>
               </div>
               <div className="flex items-center space-x-2">
                 <Button
@@ -207,9 +217,6 @@ const LandingPage: React.FC = () => {
                     </>
                   )}
                 </Button>
-                <Button variant="ghost" onClick={() => setShowEditor(false)}>
-                  首页
-                </Button>
               </div>
             </div>
           </div>
@@ -224,16 +231,14 @@ const LandingPage: React.FC = () => {
                 <PDFDownloader resumeData={resumeData} filename={`${resumeData.personalInfo.name || 'resume'}`} />
               </div>
               <div className="w-full flex justify-center bg-slate-200/50 rounded-lg p-4">
-                <div className="transform scale-90 origin-top">
-                  <ResumePreview data={resumeData} />
-                </div>
+                <ResumePreview data={resumeData} />
               </div>
             </div>
           ) : (
             /* Edit Mode - Split View */
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
               {/* Form Section */}
-              <div className="order-2 xl:order-1">
+              <div className="order-2 xl:order-1 xl:col-span-2">
                 <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                   <div className="bg-gradient-to-r from-slate-50 to-slate-100/50 px-6 py-4 border-b border-slate-200">
                     <h2 className="font-semibold text-slate-800 flex items-center gap-2">
@@ -249,7 +254,7 @@ const LandingPage: React.FC = () => {
               </div>
 
               {/* Preview Section */}
-              <div className="order-1 xl:order-2 xl:sticky xl:top-20 xl:h-fit space-y-4">
+              <div className="order-1 xl:order-2 xl:col-span-3 xl:sticky xl:top-20 xl:h-fit space-y-4">
                 <Card className="bg-white/90 backdrop-blur-sm border-slate-200 shadow-sm">
                   <CardHeader className="pb-4">
                     <div className="flex items-center justify-between">
@@ -266,12 +271,8 @@ const LandingPage: React.FC = () => {
                     </div>
                   </CardHeader>
                 </Card>
-                <div className="overflow-auto max-h-[calc(100vh-220px)] bg-gradient-to-br from-slate-100 to-slate-200 rounded-xl shadow-inner p-6 border border-slate-200">
-                  <div className="flex justify-center">
-                    <div className="transform scale-[0.55] origin-top">
-                      <ResumePreview data={resumeData} />
-                    </div>
-                  </div>
+                <div>
+                  <ResumePreview data={resumeData} />
                 </div>
               </div>
             </div>
@@ -292,7 +293,7 @@ const LandingPage: React.FC = () => {
                 <FileText className="w-5 h-5 text-white" />
               </div>
               <h1 className="text-xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">
-                Poker
+                简历大师
               </h1>
             </div>
             <div className="hidden md:flex items-center space-x-6">
@@ -305,12 +306,21 @@ const LandingPage: React.FC = () => {
               <a href="#about" className="text-slate-600 hover:text-blue-600 transition-colors font-medium">
                 关于
               </a>
-              <Button
-                onClick={() => setShowEditor(true)}
-                className="bg-blue-600 hover:bg-blue-700"
-              >
-                开始创建
-              </Button>
+              {user ? (
+                <Button
+                  onClick={() => navigate('/resumes')}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  进入简历
+                </Button>
+              ) : (
+                <Button
+                  onClick={() => navigate('/login')}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  开始创建
+                </Button>
+              )}
             </div>
             <button
               className="md:hidden p-2"
@@ -332,7 +342,10 @@ const LandingPage: React.FC = () => {
             <a href="#about" className="block text-slate-600 hover:text-blue-600" onClick={() => setMobileMenuOpen(false)}>
               关于
             </a>
-            <Button onClick={() => { setShowEditor(true); setMobileMenuOpen(false); }} className="w-full bg-blue-600">
+            <Button
+              onClick={() => { setShowEditor(true); setMobileMenuOpen(false); }}
+              className="w-full bg-blue-600"
+            >
               开始创建
             </Button>
           </div>
