@@ -14,24 +14,29 @@ const styles = StyleSheet.create({
     padding: 40,
     fontSize: 10,
     fontFamily: 'Noto Sans SC',
+    backgroundColor: '#ffffff',
   },
   header: {
-    background: '#1e293b',
-    padding: 30,
+    backgroundColor: '#1a1a2e',
+    padding: 24,
     marginBottom: 20,
     marginHorizontal: -40,
     marginTop: -40,
   },
   headerContent: {
     flexDirection: 'row',
-    gap: 20,
+    alignItems: 'center',
   },
   photoArea: {
-    width: 70,
-    height: 70,
-    background: 'rgba(255,255,255,0.1)',
+    width: 64,
+    height: 64,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+    borderRadius: 8,
+    marginRight: 20,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.1)',
   },
   photoText: {
     fontSize: 10,
@@ -39,132 +44,154 @@ const styles = StyleSheet.create({
   },
   infoArea: {
     flex: 1,
-    justifyContent: 'center',
   },
   name: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: 'bold',
     color: '#ffffff',
     marginBottom: 4,
   },
   title: {
     fontSize: 12,
-    color: '#93c5fd',
+    color: '#a5b4fc',
     marginBottom: 8,
   },
   contact: {
     fontSize: 9,
-    color: '#e2e8f0',
+    color: '#94a3b8',
     flexDirection: 'row',
     flexWrap: 'wrap',
   },
   contactItem: {
-    marginRight: 8,
+    marginRight: 4,
   },
   separator: {
-    marginRight: 8,
-    color: '#64748b',
+    marginRight: 4,
+    color: '#475569',
   },
   section: {
-    marginBottom: 16,
+    marginBottom: 20,
   },
   sectionTitle: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: 'bold',
     color: '#1e293b',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e2e8f0',
+    borderBottomWidth: 2,
+    borderBottomColor: '#4f46e5',
     paddingBottom: 4,
     marginBottom: 10,
   },
   item: {
-    marginBottom: 10,
+    marginBottom: 12,
+    paddingLeft: 12,
+    borderLeftWidth: 2,
+    borderLeftColor: '#334155',
   },
   itemHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 4,
+    marginBottom: 2,
   },
   itemTitle: {
     fontSize: 10,
     fontWeight: 'bold',
-    color: '#1f2937',
+    color: '#1e293b',
   },
   itemSub: {
     fontSize: 9,
-    color: '#3b82f6',
+    color: '#4f46e5',
   },
   itemDate: {
     fontSize: 8,
-    color: '#6b7280',
+    color: '#94a3b8',
+    backgroundColor: '#f8fafc',
+    padding: '2 6',
+    borderRadius: 3,
   },
   itemDesc: {
     fontSize: 9,
-    color: '#374151',
+    color: '#475569',
     marginTop: 4,
     lineHeight: 1.5,
   },
   achievement: {
     fontSize: 9,
-    color: '#374151',
+    color: '#64748b',
     marginTop: 2,
     paddingLeft: 8,
   },
-  techTags: {
+  techRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    marginTop: 4,
+    marginTop: 6,
     gap: 4,
   },
   techTag: {
-    fontSize: 8,
-    color: '#1d4ed8',
-    background: '#eff6ff',
+    fontSize: 7,
+    color: '#4f46e5',
+    backgroundColor: '#eef2ff',
     padding: '2 6',
-    borderRadius: 3,
+    borderRadius: 10,
   },
   skillCategory: {
     marginBottom: 8,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
   },
   skillCategoryName: {
     fontSize: 9,
     fontWeight: 'bold',
-    color: '#6b7280',
-    marginBottom: 4,
+    color: '#475569',
+    minWidth: 80,
   },
-  skillItems: {
+  skillRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    flex: 1,
     gap: 4,
   },
   skillItem: {
     fontSize: 8,
-    color: '#334155',
-    background: '#f1f5f9',
+    color: '#1e293b',
+    backgroundColor: '#f8fafc',
     borderWidth: 1,
     borderColor: '#e2e8f0',
     padding: '2 6',
     borderRadius: 3,
   },
-  languageItems: {
+  languageRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    paddingLeft: 12,
   },
   languageItem: {
-    fontSize: 9,
-    color: '#334155',
-    background: '#f8fafc',
+    fontSize: 8,
+    color: '#1e293b',
+    backgroundColor: '#f8fafc',
     borderWidth: 1,
     borderColor: '#e2e8f0',
-    padding: '4 8',
-    borderRadius: 3,
+    padding: '4 10',
+    borderRadius: 6,
+    marginRight: 8,
   },
   summary: {
     fontSize: 9,
-    color: '#374151',
+    color: '#475569',
     lineHeight: 1.6,
+  },
+  awardItem: {
+    marginBottom: 8,
+    paddingLeft: 12,
+    borderLeftWidth: 2,
+    borderLeftColor: '#334155',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  awardOrg: {
+    fontSize: 9,
+    color: '#4f46e5',
   },
 });
 
@@ -174,11 +201,7 @@ const formatDate = (dateStr: string): string => {
   return `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, '0')}`;
 };
 
-interface ResumeDocumentProps {
-  data: ResumeData;
-}
-
-const ResumeDocument: React.FC<ResumeDocumentProps> = ({ data }) => {
+export const ResumeDocument: React.FC<{ data: ResumeData }> = ({ data }) => {
   const { personalInfo, education, workExperience, projects, skills, awards, languages } = data;
 
   const renderContactItems = () => {
@@ -187,22 +210,22 @@ const ResumeDocument: React.FC<ResumeDocumentProps> = ({ data }) => {
       items.push(<Text key="email" style={styles.contactItem}>{personalInfo.email}</Text>);
     }
     if (personalInfo.email && personalInfo.phone) {
-      items.push(<Text key="sep1" style={styles.separator}>|</Text>);
+      items.push(<Text key="sep1" style={styles.separator}>•</Text>);
     }
     if (personalInfo.phone) {
       items.push(<Text key="phone" style={styles.contactItem}>{personalInfo.phone}</Text>);
     }
     if ((personalInfo.email || personalInfo.phone) && personalInfo.location) {
-      items.push(<Text key="sep2" style={styles.separator}>|</Text>);
+      items.push(<Text key="sep2" style={styles.separator}>•</Text>);
     }
     if (personalInfo.location) {
       items.push(<Text key="location" style={styles.contactItem}>{personalInfo.location}</Text>);
     }
     if ((personalInfo.email || personalInfo.phone || personalInfo.location) && personalInfo.github) {
-      items.push(<Text key="sep3" style={styles.separator}>|</Text>);
+      items.push(<Text key="sep3" style={styles.separator}>•</Text>);
     }
     if (personalInfo.github) {
-      items.push(<Text key="github" style={styles.contactItem}>{personalInfo.github}</Text>);
+      items.push(<Text key="github" style={{ ...styles.contactItem, color: '#a5b4fc' }}>{personalInfo.github}</Text>);
     }
     return items;
   };
@@ -213,11 +236,11 @@ const ResumeDocument: React.FC<ResumeDocumentProps> = ({ data }) => {
         <View style={styles.header}>
           <View style={styles.headerContent}>
             <View style={styles.photoArea}>
-              <Text style={styles.photoText}>照片</Text>
+              <Text style={styles.photoText}>Photo</Text>
             </View>
             <View style={styles.infoArea}>
-              <Text style={styles.name}>{personalInfo.name || '姓名'}</Text>
-              <Text style={styles.title}>{personalInfo.title || '职位'}</Text>
+              <Text style={styles.name}>{personalInfo.name || 'Your Name'}</Text>
+              <Text style={styles.title}>{personalInfo.title || 'Professional Title'}</Text>
               <View style={styles.contact}>
                 {renderContactItems()}
               </View>
@@ -227,14 +250,14 @@ const ResumeDocument: React.FC<ResumeDocumentProps> = ({ data }) => {
 
         {personalInfo.summary && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>个人简介</Text>
+            <Text style={styles.sectionTitle}>About Me</Text>
             <Text style={styles.summary}>{personalInfo.summary}</Text>
           </View>
         )}
 
         {workExperience.length > 0 && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>工作经验</Text>
+            <Text style={styles.sectionTitle}>Experience</Text>
             {workExperience.map((exp, index) => (
               <View key={index} style={styles.item}>
                 <View style={styles.itemHeader}>
@@ -243,12 +266,12 @@ const ResumeDocument: React.FC<ResumeDocumentProps> = ({ data }) => {
                     <Text style={styles.itemSub}>{exp.company}</Text>
                   </View>
                   <Text style={styles.itemDate}>
-                    {formatDate(exp.startDate)} - {exp.current ? '至今' : formatDate(exp.endDate)}
+                    {formatDate(exp.startDate)} - {exp.current ? 'Present' : formatDate(exp.endDate)}
                   </Text>
                 </View>
                 {exp.description && <Text style={styles.itemDesc}>{exp.description}</Text>}
                 {exp.achievements?.map((achievement, aIndex) => (
-                  <Text key={aIndex} style={styles.achievement}>▪ {achievement}</Text>
+                  <Text key={aIndex} style={styles.achievement}>▸ {achievement}</Text>
                 ))}
               </View>
             ))}
@@ -257,7 +280,7 @@ const ResumeDocument: React.FC<ResumeDocumentProps> = ({ data }) => {
 
         {projects.length > 0 && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>项目经历</Text>
+            <Text style={styles.sectionTitle}>Projects</Text>
             {projects.map((project, index) => (
               <View key={index} style={styles.item}>
                 <View style={styles.itemHeader}>
@@ -266,12 +289,12 @@ const ResumeDocument: React.FC<ResumeDocumentProps> = ({ data }) => {
                     {project.role && <Text style={styles.itemSub}>{project.role}</Text>}
                   </View>
                   <Text style={styles.itemDate}>
-                    {formatDate(project.startDate)} - {project.current ? '至今' : formatDate(project.endDate)}
+                    {formatDate(project.startDate)} - {project.current ? 'Present' : formatDate(project.endDate)}
                   </Text>
                 </View>
                 {project.description && <Text style={styles.itemDesc}>{project.description}</Text>}
                 {project.technologies?.length && (
-                  <View style={styles.techTags}>
+                  <View style={styles.techRow}>
                     {project.technologies.map((tech, tIndex) => (
                       <Text key={tIndex} style={styles.techTag}>{tech}</Text>
                     ))}
@@ -284,13 +307,13 @@ const ResumeDocument: React.FC<ResumeDocumentProps> = ({ data }) => {
 
         {education.length > 0 && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>教育背景</Text>
+            <Text style={styles.sectionTitle}>Education</Text>
             {education.map((edu, index) => (
               <View key={index} style={styles.item}>
                 <View style={styles.itemHeader}>
                   <View>
                     <Text style={styles.itemTitle}>{edu.school}</Text>
-                    <Text style={styles.itemSub}>{edu.degree}{edu.field ? ` · ${edu.field}` : ''}</Text>
+                    <Text style={styles.itemSub}>{edu.degree}{edu.field ? ` • ${edu.field}` : ''}</Text>
                   </View>
                   <Text style={styles.itemDate}>
                     {formatDate(edu.startDate)} - {formatDate(edu.endDate)}
@@ -303,11 +326,11 @@ const ResumeDocument: React.FC<ResumeDocumentProps> = ({ data }) => {
 
         {skills.length > 0 && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>专业技能</Text>
+            <Text style={styles.sectionTitle}>Skills</Text>
             {skills.map((skill, index) => (
               <View key={index} style={styles.skillCategory}>
-                <Text style={styles.skillCategoryName}>{skill.category}</Text>
-                <View style={styles.skillItems}>
+                <Text style={styles.skillCategoryName}>{skill.category}:</Text>
+                <View style={styles.skillRow}>
                   {skill.items.map((item, sIndex) => (
                     <Text key={sIndex} style={styles.skillItem}>{item}</Text>
                   ))}
@@ -319,14 +342,14 @@ const ResumeDocument: React.FC<ResumeDocumentProps> = ({ data }) => {
 
         {awards.length > 0 && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>荣誉奖项</Text>
+            <Text style={styles.sectionTitle}>Awards</Text>
             {awards.map((award, index) => (
-              <View key={index} style={styles.item}>
-                <View style={styles.itemHeader}>
+              <View key={index} style={styles.awardItem}>
+                <View>
                   <Text style={styles.itemTitle}>{award.title}</Text>
-                  <Text style={styles.itemDate}>{award.date}</Text>
+                  <Text style={styles.awardOrg}>• {award.organization}</Text>
                 </View>
-                <Text style={styles.itemSub}>{award.organization}</Text>
+                <Text style={styles.itemDate}>{award.date}</Text>
               </View>
             ))}
           </View>
@@ -334,10 +357,10 @@ const ResumeDocument: React.FC<ResumeDocumentProps> = ({ data }) => {
 
         {languages.length > 0 && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>语言能力</Text>
-            <View style={styles.languageItems}>
+            <Text style={styles.sectionTitle}>Languages</Text>
+            <View style={styles.languageRow}>
               {languages.filter(l => l.name && l.level).map((lang, index) => (
-                <Text key={index} style={styles.languageItem}>{lang.name} · {lang.level}</Text>
+                <Text key={index} style={styles.languageItem}>{lang.name} - {lang.level}</Text>
               ))}
             </View>
           </View>
@@ -359,4 +382,4 @@ export const generateResumePDF = async ({ data, filename = 'resume' }: { data: R
   URL.revokeObjectURL(url);
 };
 
-export default generateResumePDF;
+export default ResumeDocument;
