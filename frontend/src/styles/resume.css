@@ -1,0 +1,40 @@
+:root {
+  --resume-header: #1a1a2e;
+  --resume-header-gradient: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  --resume-header-text: #ffffff;
+  --resume-header-subtitle: #a5b4fc;
+  --resume-header-contact: #94a3b8;
+  --resume-header-sep: #475569;
+  --resume-border: #e2e8f0;
+  --resume-border-dark: #334155;
+  --resume-text: #475569;
+  --resume-text-light: #64748b;
+  --resume-title: #1e293b;
+  --resume-subtitle: #4f46e5;
+  --resume-subtitle-light: #818cf8;
+  --resume-date: #94a3b8;
+  --resume-category-title: #475569;
+  --resume-skill-border: #e2e8f0;
+  --resume-skill-bg: #f8fafc;
+  --resume-tech-tag-bg: #eef2ff;
+  --resume-tech-tag: #4f46e5;
+  --resume-photo-border: #475569;
+  --resume-photo-text: #94a3b8;
+  --resume-accent: #4f46e5;
+  
+  --resume-name: 24px;
+  --resume-title-fz: 12px;
+  --resume-contact: 9px;
+  --resume-sec-title: 13px;
+  --resume-item-title: 10px;
+  --resume-item-sub: 9px;
+  --resume-item-date: 8px;
+  --resume-item-desc: 9px;
+  --resume-tech-tag-fz: 7px;
+  --resume-skill-cat: 9px;
+  --resume-skill-item: 8px;
+  --resume-summary: 9px;
+  
+  --resume-page-width: 540px;
+  --resume-page-min-height: 766px;
+}

@@ -5,7 +5,7 @@ import (
 
 	"resume-ai-backend/internal/config"
 
-	"github.com/glebarez/sqlite"
+	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
 
@@ -50,10 +50,19 @@ type Resume struct {
 func InitDB(cfg *config.Config) {
 	var err error
 
-	db, err = gorm.Open(sqlite.Open(cfg.DBPath), &gorm.Config{})
+	db, err = gorm.Open(mysql.Open(cfg.GetDSN()), &gorm.Config{})
 	if err != nil {
 		panic("failed to connect database: " + err.Error())
 	}
+
+	sqlDB, err := db.DB()
+	if err != nil {
+		panic("failed to get database instance: " + err.Error())
+	}
+
+	sqlDB.SetMaxIdleConns(10)
+	sqlDB.SetMaxOpenConns(100)
+	sqlDB.SetConnMaxLifetime(time.Hour)
 
 	err = db.AutoMigrate(
 		&User{},

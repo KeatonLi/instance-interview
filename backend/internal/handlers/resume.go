@@ -11,19 +11,13 @@ import (
 )
 
 func GetResumes(c *gin.Context) {
-	userID := c.Query("user_id")
-	if userID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "user_id is required"})
+	userID, ok := GetCurrentUserID(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 		return
 	}
 
-	uid, err := strconv.ParseUint(userID, 10, 32)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user_id"})
-		return
-	}
-
-	resumes, err := models.GetResumesByUserID(uint(uid))
+	resumes, err := models.GetResumesByUserID(userID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -31,7 +25,12 @@ func GetResumes(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"code": 0,
-		"data": resumes,
+		"data": gin.H{
+			"list":      resumes,
+			"total":     len(resumes),
+			"page":      1,
+			"page_size": 10,
+		},
 	})
 }
 
@@ -74,10 +73,17 @@ func CreateResume(c *gin.Context) {
 	}
 
 	resume := &models.Resume{
-		Title:      req.Title,
-		ResumeType: req.ResumeType,
-		UserID:     req.UserID,
-		Status:     "draft",
+		Title:          req.Title,
+		ResumeType:     req.ResumeType,
+		UserID:         req.UserID,
+		Status:         "draft",
+		PersonalInfo:   "{}",    // JSON 对象
+		Education:      "[]",    // JSON 数组
+		WorkExperience: "[]",
+		Projects:       "[]",
+		Skills:         "[]",
+		Awards:         "[]",
+		Languages:      "[]",
 	}
 
 	if err := models.CreateResume(resume); err != nil {
