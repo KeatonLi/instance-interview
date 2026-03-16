@@ -100,7 +100,7 @@ const EditorPage: React.FC = () => {
     }
   };
 
-  const handleDataChange = useCallback((newData: ResumeData) => {
+  const handleDataChange = useCallback((newData: ResumeData | ((prev: ResumeData) => ResumeData)) => {
     setResumeData(newData);
     setHasChanges(true);
   }, []);

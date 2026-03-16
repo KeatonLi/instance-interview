@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { FileText, Loader2, User, ArrowLeft } from 'lucide-react';
+import { FileText, Loader2, User } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 
 export default function LoginPage() {
