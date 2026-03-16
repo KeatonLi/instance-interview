@@ -50,3 +50,27 @@ coverage/
 .cache/
 .temp/
 *.tsbuildinfo
+
+# Go build outputs
+# Binary files (compiled executables)
+/server
+backend/server
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Go workspace file
+go.work
+go.work.sum
+
+# Go vendor directory (if using)
+vendor/
+
+# Go test binary
+*.test
+
+# Go coverage output
+*.out
+coverage.out
