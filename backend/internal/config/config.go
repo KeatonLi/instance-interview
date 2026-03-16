@@ -18,14 +18,14 @@ type Config struct {
 
 func Load() *Config {
 	return &Config{
-		Port:       getEnv("PORT", "8082"),
-		DBHost:     getEnv("DB_HOST", "111.231.107.210"),
-		DBPort:     getEnv("DB_PORT", "13306"),
-		DBUser:     getEnv("DB_USER", "interview"),
-		DBPassword: getEnv("DB_PASSWORD", "interviewSQL"),
-		DBName:     getEnv("DB_NAME", "interview"),
-		MinimaxAPI: getEnv("MINIMAX_API_URL", "https://api.minimax.chat/v1/text/chatcompletion_v2"),
-		MinimaxKey: getEnv("MINIMAX_API_KEY", ""),
+		Port:       getEnv("RESUME_PORT", "8082"),
+		DBHost:     getEnv("RESUME_DB_HOST", "localhost"),
+		DBPort:     getEnv("RESUME_DB_PORT", "3306"),
+		DBUser:     getEnv("RESUME_DB_USER", "root"),
+		DBPassword: getEnv("RESUME_DB_PASSWORD", ""),
+		DBName:     getEnv("RESUME_DB_NAME", "interview"),
+		MinimaxAPI: getEnv("ANTHROPIC_BASE_URL", "https://api.minimax.chat/v1/text/chatcompletion_v2"),
+		MinimaxKey: getEnv("ANTHROPIC_API_KEY", ""),
 	}
 }
 
