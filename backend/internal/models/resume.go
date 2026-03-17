@@ -30,6 +30,7 @@ type Resume struct {
 	ID             uint           `json:"id" gorm:"primaryKey"`
 	UserID         uint           `json:"user_id" gorm:"index;not null"`
 	Title          string         `json:"title" gorm:"size:255;not null"`
+	ThemeID        int            `json:"theme_id" gorm:"default:0"`           // 主题ID：0-经典商务, 1-现代简约, 2-现代渐变, 3-温暖橙光, 4-清新绿意
 	ResumeType     string         `json:"resume_type" gorm:"size:50;default:'full'"` // full, simple, project-manager, frontend, backend, fullstack
 	IsDefault      bool           `json:"is_default" gorm:"default:false"`
 	Status         string         `json:"status" gorm:"size:20;default:'draft'"` // draft, published

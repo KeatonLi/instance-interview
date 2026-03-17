@@ -42,6 +42,7 @@ const EditorPage: React.FC = () => {
       // 解析后端返回的 JSON 字符串字段
       const resume = res.data;
       setResumeTitle(resume.title || '我的简历');
+      setThemeId(resume.theme_id || 0);
       setResumeData({
         personalInfo: resume.personal_info ? JSON.parse(resume.personal_info) : {},
         education: resume.education ? JSON.parse(resume.education) : [],
@@ -107,6 +108,19 @@ const EditorPage: React.FC = () => {
     setResumeData(newData);
     setHasChanges(true);
   }, []);
+
+  const handleThemeChange = useCallback(async (newThemeId: number) => {
+    setThemeId(newThemeId);
+    if (id) {
+      try {
+        await resumeApi.updateResume(parseInt(id), {
+          theme_id: newThemeId,
+        });
+      } catch (error) {
+        console.error('Failed to save theme:', error);
+      }
+    }
+  }, [id]);
 
   const loadSampleData = () => {
     setResumeData({
@@ -317,7 +331,7 @@ const EditorPage: React.FC = () => {
               {themes.map((theme, index) => (
                 <button
                   key={index}
-                  onClick={() => setThemeId(index)}
+                  onClick={() => handleThemeChange(index)}
                   className={`py-2 px-4 rounded-lg text-sm font-medium transition-all ${
                     themeId === index
                       ? 'bg-blue-500 text-white'

@@ -5,6 +5,7 @@ export interface Resume {
   id: number;
   user_id: number;
   title: string;
+  theme_id: number;
   resume_type: string;
   status: string;
   personal_info: string;
@@ -117,9 +118,10 @@ export const resumeApi = {
     return api.post<ResumeResponse>('/resumes', body);
   },
 
-  updateResume: (id: number, data: { title?: string; resume_data?: ResumeData }) => {
+  updateResume: (id: number, data: { title?: string; theme_id?: number; resume_data?: ResumeData }) => {
     const body: Record<string, unknown> = {};
     if (data.title) body.title = data.title;
+    if (data.theme_id !== undefined) body.theme_id = data.theme_id;
     // 将 resume_data 转换为后端需要的 JSON 字符串字段
     if (data.resume_data) {
       body.personal_info = JSON.stringify(data.resume_data.personalInfo);

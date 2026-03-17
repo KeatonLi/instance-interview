@@ -112,6 +112,7 @@ func UpdateResume(c *gin.Context) {
 
 	var req struct {
 		Title          string `json:"title"`
+		ThemeID        *int   `json:"theme_id"`
 		ResumeType     string `json:"resume_type"`
 		Status         string `json:"status"`
 		IsDefault      *bool  `json:"is_default"`
@@ -131,6 +132,9 @@ func UpdateResume(c *gin.Context) {
 
 	if req.Title != "" {
 		resume.Title = req.Title
+	}
+	if req.ThemeID != nil {
+		resume.ThemeID = *req.ThemeID
 	}
 	if req.ResumeType != "" {
 		resume.ResumeType = req.ResumeType
