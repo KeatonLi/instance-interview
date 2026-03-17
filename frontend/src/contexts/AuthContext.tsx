@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import { API_BASE_URL } from '@/config';
 
 export interface User {
   id: number;
@@ -23,8 +24,6 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8082/api/v1';
 
 async function authRequest(endpoint: string, body?: unknown) {
   const token = localStorage.getItem('token');

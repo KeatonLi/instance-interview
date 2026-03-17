@@ -1,4 +1,5 @@
 import type { ResumeData } from '@/types/resume';
+import { API_BASE_URL } from '@/config';
 
 export interface Resume {
   id: number;
@@ -47,8 +48,6 @@ export interface ResumeCreateRequest {
   user_id: number;
   resume_data?: ResumeData;
 }
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8082/api/v1';
 
 function getToken(): string | null {
   return localStorage.getItem('token');
