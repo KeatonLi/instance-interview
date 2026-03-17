@@ -82,5 +82,16 @@ go build -o server  # 构建二进制文件
 - `frontend/src/types/resume.ts` - 简历数据类型定义
 - `frontend/src/components/ResumePDF.tsx` - PDF 生成组件
 - `frontend/src/components/ResumePreview.tsx` - 简历预览组件
-- `frontend/src/styles/resumeTheme.ts` - 简历主题配置（模板颜色）
+- `frontend/src/styles/resumeThemes.ts` - 简历主题配置（5种模板风格）
 - `backend/main.go` - 服务器入口
+
+## 简历模板
+
+模板配置文件：`frontend/src/styles/resumeThemes.ts`
+
+目前提供 5 种模板风格：
+1. **经典商务** - 蓝白色调，黑色细线
+2. **现代简约** - 纯白底色，黑灰文字
+3. **现代渐变** - 紫色渐变头部
+4. **温暖橙光** - 橙色暖色调
+5. **清新绿意** - 绿色清新风格
