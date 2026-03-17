@@ -31,7 +31,7 @@ go build -o server  # 构建二进制文件
 ```
 
 ### 环境变量
-- 前端：`VITE_API_URL` - 后端 API 地址（默认：`http://localhost:8082/api/v1`）
+- 前端：`VITE_API_URL` - 后端 API 地址（默认：`http://111.231.107.210:8082/api/v1`）
 - 后端：
   - `PORT` - 服务器端口（默认：8082）
   - `DB_HOST`、`DB_PORT`、`DB_USER`、`DB_PASSWORD`、`DB_NAME` - MySQL 数据库

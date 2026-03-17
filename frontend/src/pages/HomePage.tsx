@@ -208,7 +208,7 @@ const HomePage: React.FC = () => {
                   <div className="relative rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow bg-white">
                     <div className="aspect-[3/4]">
                       <div className="w-full h-full transform scale-125 origin-top">
-                        <ResumePreview data={sampleResumeData} />
+                        <ResumePreview data={sampleResumeData} themeId={index} />
                       </div>
                     </div>
                     {/* 模板名称 */}

@@ -1,12 +1,36 @@
 import type { ResumeData } from '@/types/resume';
+import { themes, defaultTheme } from '@/styles/resumeThemes';
 import '@/styles/resume.css';
 
 interface ResumePreviewProps {
   data: ResumeData;
+  themeId?: number;
 }
 
-const ResumePreview: React.FC<ResumePreviewProps> = ({ data }) => {
+const ResumePreview: React.FC<ResumePreviewProps> = ({ data, themeId = 0 }) => {
+  const theme = themes[themeId] || defaultTheme;
+  const colors = theme.colors;
   const { personalInfo, education, workExperience, projects, skills, awards, languages } = data;
+
+  // 构建主题样式
+  const themeStyles: React.CSSProperties = {
+    '--resume-header': colors.header,
+    '--resume-header-text': colors.headerText,
+    '--resume-header-subtitle': colors.headerSubtitle,
+    '--resume-header-contact': colors.headerContact,
+    '--resume-header-sep': colors.headerContactSep,
+    '--resume-border': colors.border,
+    '--resume-text': colors.text,
+    '--resume-title': colors.title,
+    '--resume-subtitle': colors.subtitle,
+    '--resume-date': colors.date,
+    '--resume-category-title': colors.categoryTitle,
+    '--resume-skill-border': colors.skillBorder,
+    '--resume-tech-tag': colors.techTag,
+    '--resume-photo-border': colors.photoBorder,
+    '--resume-photo-text': colors.photoText,
+    '--resume-accent': colors.accent,
+  } as React.CSSProperties;
 
   const formatDate = (dateStr: string) => {
     if (!dateStr) return '';
@@ -15,7 +39,10 @@ const ResumePreview: React.FC<ResumePreviewProps> = ({ data }) => {
   };
 
   return (
-    <div className="w-[var(--resume-page-width)] min-h-[var(--resume-page-min-height)] bg-white mx-auto rounded-xl shadow-xl font-['Noto_Sans_SC',sans-serif] text-[10px] overflow-hidden">
+    <div
+      className="w-[var(--resume-page-width)] min-h-[var(--resume-page-min-height)] bg-white mx-auto rounded-xl shadow-xl font-['Noto_Sans_SC',sans-serif] text-[10px] overflow-hidden"
+      style={themeStyles}
+    >
       {/* Header */}
       <div className="bg-[var(--resume-header)] px-8 py-6">
         <div className="flex items-center gap-5">
