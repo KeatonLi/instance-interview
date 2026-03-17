@@ -3,11 +3,12 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { resumeApi } from '@/lib/resumes';
 import { Button } from '@/components/ui/button';
-import { Card, CardHeader } from '@/components/ui/card';
+import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { FileText, Sparkles, Eye, Edit, RotateCcw, Save, Loader2, ArrowLeft, Pencil } from 'lucide-react';
+import { FileText, Sparkles, Eye, Edit, RotateCcw, Save, Loader2, ArrowLeft, Pencil, Palette } from 'lucide-react';
 import type { ResumeData } from '@/types/resume';
 import { defaultResumeData } from '@/types/resume';
+import { themes } from '@/styles/resumeThemes';
 import ResumeForm from '@/components/ResumeForm';
 import ResumePreview from '@/components/ResumePreview';
 import PDFDownloader from '@/components/PDFDownloader';
@@ -20,6 +21,8 @@ const EditorPage: React.FC = () => {
   const [resumeTitle, setResumeTitle] = useState('我的简历');
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [resumeData, setResumeData] = useState<ResumeData>(defaultResumeData);
+  const [themeId, setThemeId] = useState(0);
+  const [showThemePicker, setShowThemePicker] = useState(false);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -309,11 +312,27 @@ const EditorPage: React.FC = () => {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {isPreviewMode ? (
           <div className="flex flex-col items-center space-y-6">
+            {/* 模板切换 */}
+            <div className="flex gap-2 p-2 bg-white rounded-lg shadow-sm">
+              {themes.map((theme, index) => (
+                <button
+                  key={index}
+                  onClick={() => setThemeId(index)}
+                  className={`py-2 px-4 rounded-lg text-sm font-medium transition-all ${
+                    themeId === index
+                      ? 'bg-blue-500 text-white'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  }`}
+                >
+                  {theme.name}
+                </button>
+              ))}
+            </div>
             <div className="w-full max-w-md">
               <PDFDownloader resumeData={resumeData} filename={`${resumeData.personalInfo.name || 'resume'}`} />
             </div>
             <div className="w-full flex justify-center">
-              <ResumePreview data={resumeData} />
+              <ResumePreview data={resumeData} themeId={themeId} />
             </div>
           </div>
         ) : (
@@ -344,14 +363,46 @@ const EditorPage: React.FC = () => {
                       </h2>
                       <p className="text-xs text-slate-500 mt-1">最终导出效果</p>
                     </div>
-                    <div className="w-40">
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowThemePicker(!showThemePicker)}
+                        className="flex items-center gap-1"
+                      >
+                        <Palette size={14} />
+                        模板
+                      </Button>
                       <PDFDownloader resumeData={resumeData} filename={`${resumeData.personalInfo.name || 'resume'}`} />
                     </div>
                   </div>
                 </CardHeader>
+                {/* 模板选择器 */}
+                {showThemePicker && (
+                  <CardContent className="pt-0">
+                    <div className="flex gap-2 p-2 bg-slate-50 rounded-lg">
+                      {themes.map((theme, index) => (
+                        <button
+                          key={index}
+                          onClick={() => {
+                            setThemeId(index);
+                            setShowThemePicker(false);
+                          }}
+                          className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all ${
+                            themeId === index
+                              ? 'bg-white shadow-sm ring-2 ring-blue-500 text-blue-600'
+                              : 'bg-white/50 hover:bg-white text-slate-600'
+                          }`}
+                        >
+                          {theme.name}
+                        </button>
+                      ))}
+                    </div>
+                  </CardContent>
+                )}
               </Card>
               <div>
-                <ResumePreview data={resumeData} />
+                <ResumePreview data={resumeData} themeId={themeId} />
               </div>
             </div>
           </div>
