@@ -139,7 +139,7 @@ const HomePage: React.FC = () => {
                     size="lg"
                     variant="outline"
                     onClick={() => navigate('/login')}
-                    className="border-slate-600 text-white hover:bg-slate-800 text-lg px-8 py-6 h-auto"
+                    className="border-blue-400 text-blue-300 hover:bg-blue-500/20 hover:text-white hover:border-blue-300 text-lg px-8 py-6 h-auto"
                   >
                     <Sparkles className="mr-2 w-5 h-5" />
                     立即登录
@@ -193,7 +193,7 @@ const HomePage: React.FC = () => {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+          <div className="grid md:grid-cols-3 lg:grid-cols-5 gap-4">
             {themes.map((theme, index) => (
               <Card
                 key={index}
@@ -204,10 +204,12 @@ const HomePage: React.FC = () => {
                 }`}
                 onClick={() => setSelectedTheme(index)}
               >
-                <CardContent className="p-3">
-                  <div className="relative rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow">
-                    <div style={{ transform: 'scale(0.2)', transformOrigin: 'top left', width: '500%' }}>
-                      <ResumePreview data={sampleResumeData} />
+                <CardContent className="p-2">
+                  <div className="relative rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow bg-white">
+                    <div className="aspect-[3/4]">
+                      <div className="w-full h-full transform scale-125 origin-top">
+                        <ResumePreview data={sampleResumeData} />
+                      </div>
                     </div>
                     {/* 模板名称 */}
                     <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-2">
