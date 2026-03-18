@@ -38,9 +38,6 @@ const ResumePreview: React.FC<ResumePreviewProps> = ({ data, themeId = 0, scale 
 
   // 如果有缩放，使用外层容器来应用变换
   if (scale !== 1) {
-    // 计算缩放后的尺寸
-    const scaledWidth = 540 * scale;
-    const scaledHeight = 766 * scale;
     return (
       <div
         className="flex items-start justify-center"
