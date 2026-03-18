@@ -48,7 +48,7 @@ export default function RegisterPage() {
           <div className="mx-auto w-12 h-12 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center mb-4">
             <FileText className="w-6 h-6 text-white" />
           </div>
-          <CardTitle className="text-2xl">注册 简历大师</CardTitle>
+          <CardTitle className="text-2xl">注册 Kvee</CardTitle>
           <CardDescription>创建账号开始管理你的简历</CardDescription>
         </CardHeader>
         <CardContent>

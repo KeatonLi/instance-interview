@@ -1,120 +1,208 @@
-// 简历模板主题配置
+// 简历模板主题配置 - 支持不同布局
 
-// 经典商务 - 蓝白色调，黑色细线
+export type LayoutType = 'classic' | 'minimalist' | 'gradient' | 'timeline' | 'sidebar';
+
+// 通用字体配置
+const defaultFonts = {
+  name: 'font-bold',
+  title: 'font-semibold',
+  body: 'font-normal',
+  size: {
+    name: 'text-xl',
+    title: 'text-xs',
+    sectionTitle: 'text-sm',
+    itemTitle: 'text-xs',
+    itemSub: 'text-[10px]',
+    date: 'text-[9px]',
+    body: 'text-[10px]',
+  }
+};
+
+// 经典商务 - 标准顶部标题布局
 export const classicTheme = {
   name: '经典商务',
+  layout: 'classic' as LayoutType,
   colors: {
     header: '#1e293b',
     headerText: '#ffffff',
     headerSubtitle: '#93c5fd',
     headerContact: '#cbd5e1',
     headerContactSep: '#64748b',
+    sidebar: '#1e293b',
+    sidebarText: '#ffffff',
+    sidebarSubtitle: '#94a3b8',
     border: '#334155',
+    borderLight: '#e2e8f0',
     text: '#374151',
+    textLight: '#6b7280',
     title: '#1e2937',
     subtitle: '#2563eb',
     date: '#6b7280',
     categoryTitle: '#4b5563',
     skillBorder: '#cbd5e1',
+    skillBg: '#f1f5f9',
     techTag: '#1e40af',
+    techTagBg: '#dbeafe',
+    accent: '#2563eb',
+    accentLight: '#dbeafe',
     photoBorder: '#475569',
     photoText: '#94a3b8',
-    accent: '#2563eb',
+    sidebarBg: '#1e293b',
+    cardBg: '#ffffff',
+    cardBorder: '#e2e8f0',
   },
+  fonts: defaultFonts,
 };
 
-// 现代简约 - 纯白底色，黑灰文字
+// 现代简约 - 居中对齐，纯白底色
 export const minimalistTheme = {
   name: '现代简约',
+  layout: 'minimalist' as LayoutType,
   colors: {
     header: '#ffffff',
     headerText: '#111827',
     headerSubtitle: '#6b7280',
     headerContact: '#9ca3af',
     headerContactSep: '#d1d5db',
+    sidebar: '#ffffff',
+    sidebarText: '#111827',
+    sidebarSubtitle: '#6b7280',
     border: '#e5e7eb',
+    borderLight: '#f3f4f6',
     text: '#374151',
+    textLight: '#9ca3af',
     title: '#111827',
     subtitle: '#059669',
     date: '#9ca3af',
     categoryTitle: '#374151',
     skillBorder: '#e5e7eb',
+    skillBg: '#f9fafb',
     techTag: '#059669',
+    techTagBg: '#d1fae5',
+    accent: '#059669',
+    accentLight: '#d1fae5',
     photoBorder: '#e5e7eb',
     photoText: '#9ca3af',
-    accent: '#059669',
+    sidebarBg: '#f9fafb',
+    cardBg: '#ffffff',
+    cardBorder: '#e5e7eb',
+  },
+  fonts: {
+    ...defaultFonts,
+    name: 'font-light',
+    title: 'font-light',
+    body: 'font-light',
   },
 };
 
-// 彩色渐变 - 蓝色渐变头部
+// 现代渐变 - 顶部大头部，模块化卡片
 export const gradientTheme = {
   name: '现代渐变',
+  layout: 'gradient' as LayoutType,
   colors: {
     header: 'linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)',
     headerText: '#ffffff',
     headerSubtitle: '#bfdbfe',
     headerContact: '#dbeafe',
     headerContactSep: '#93c5fd',
+    sidebar: '#ffffff',
+    sidebarText: '#ffffff',
+    sidebarSubtitle: '#c4b5fd',
     border: '#8b5cf6',
+    borderLight: '#f5f3ff',
     text: '#374151',
+    textLight: '#6b7280',
     title: '#1f2937',
     subtitle: '#8b5cf6',
     date: '#6b7280',
     categoryTitle: '#4b5563',
     skillBorder: '#c4b5fd',
+    skillBg: '#f5f3ff',
     techTag: '#7c3aed',
+    techTagBg: '#ede9fe',
+    accent: '#8b5cf6',
+    accentLight: '#ede9fe',
     photoBorder: '#a78bfa',
     photoText: '#c4b5fd',
-    accent: '#8b5cf6',
+    sidebarBg: '#8b5cf6',
+    cardBg: '#ffffff',
+    cardBorder: '#ede9fe',
   },
+  fonts: defaultFonts,
 };
 
-// 温暖橙色调
-export const warmTheme = {
-  name: '温暖橙光',
+// 时间线布局 - 左侧时间线样式
+export const timelineTheme = {
+  name: '时间线',
+  layout: 'timeline' as LayoutType,
+  colors: {
+    header: '#0f172a',
+    headerText: '#ffffff',
+    headerSubtitle: '#38bdf8',
+    headerContact: '#94a3b8',
+    headerContactSep: '#475569',
+    sidebar: '#0f172a',
+    sidebarText: '#ffffff',
+    sidebarSubtitle: '#38bdf8',
+    border: '#1e293b',
+    borderLight: '#1e293b',
+    text: '#e2e8f0',
+    textLight: '#94a3b8',
+    title: '#f1f5f9',
+    subtitle: '#38bdf8',
+    date: '#64748b',
+    categoryTitle: '#e2e8f0',
+    skillBorder: '#334155',
+    skillBg: '#1e293b',
+    techTag: '#38bdf8',
+    techTagBg: '#0c4a6e',
+    accent: '#38bdf8',
+    accentLight: '#0c4a6e',
+    photoBorder: '#38bdf8',
+    photoText: '#7dd3fc',
+    sidebarBg: '#0f172a',
+    cardBg: '#1e293b',
+    cardBorder: '#334155',
+  },
+  fonts: defaultFonts,
+};
+
+// 左侧边栏 - 深色侧边栏布局
+export const sidebarTheme = {
+  name: '左侧边栏',
+  layout: 'sidebar' as LayoutType,
   colors: {
     header: '#f97316',
     headerText: '#ffffff',
     headerSubtitle: '#fed7aa',
     headerContact: '#ffedd5',
     headerContactSep: '#fdba74',
+    sidebar: '#f97316',
+    sidebarText: '#ffffff',
+    sidebarSubtitle: '#fed7aa',
     border: '#ea580c',
+    borderLight: '#fed7aa',
     text: '#374151',
+    textLight: '#6b7280',
     title: '#1f2937',
     subtitle: '#ea580c',
     date: '#9ca3af',
     categoryTitle: '#4b5563',
     skillBorder: '#fdba74',
+    skillBg: '#fff7ed',
     techTag: '#c2410c',
+    techTagBg: '#ffedd5',
+    accent: '#f97316',
+    accentLight: '#ffedd5',
     photoBorder: '#fb923c',
     photoText: '#fed7aa',
-    accent: '#f97316',
+    sidebarBg: '#f97316',
+    cardBg: '#ffffff',
+    cardBorder: '#fed7aa',
   },
+  fonts: defaultFonts,
 };
 
-// 清新绿色
-export const greenTheme = {
-  name: '清新绿意',
-  colors: {
-    header: '#059669',
-    headerText: '#ffffff',
-    headerSubtitle: '#a7f3d0',
-    headerContact: '#d1fae5',
-    headerContactSep: '#6ee7b7',
-    border: '#047857',
-    text: '#374151',
-    title: '#1f2937',
-    subtitle: '#059669',
-    date: '#9ca3af',
-    categoryTitle: '#4b5563',
-    skillBorder: '#a7f3d0',
-    techTag: '#047857',
-    photoBorder: '#34d399',
-    photoText: '#a7f3d0',
-    accent: '#059669',
-  },
-};
-
-export const themes = [classicTheme, minimalistTheme, gradientTheme, warmTheme, greenTheme];
+export const themes = [classicTheme, minimalistTheme, gradientTheme, timelineTheme, sidebarTheme];
 
 export const defaultTheme = classicTheme;

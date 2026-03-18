@@ -153,17 +153,8 @@ const HomePage: React.FC = () => {
               <div className="relative">
                 {/* 装饰效果 */}
                 <div className="absolute -inset-4 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-2xl blur-xl opacity-30"></div>
-                <div className="relative bg-white rounded-xl shadow-2xl overflow-hidden transform hover:scale-105 transition-transform duration-500">
-                  <div style={{ width: '280px', height: '396px' }}>
-                    <ResumePreview data={sampleResumeData} />
-                  </div>
-                </div>
-                {/* 浮动标签 */}
-                <div className="absolute -right-8 top-8 bg-white text-slate-800 px-4 py-2 rounded-lg shadow-lg animate-bounce">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-green-500" />
-                    <span className="text-sm font-medium">100% 免费</span>
-                  </div>
+                <div className="relative bg-white rounded-xl shadow-2xl overflow-hidden transform hover:scale-105 transition-transform duration-500" style={{ width: '360px', height: '510px' }}>
+                  <ResumePreview data={sampleResumeData} themeId={selectedTheme} scale={0.67} />
                 </div>
               </div>
             </div>
@@ -206,10 +197,8 @@ const HomePage: React.FC = () => {
               >
                 <CardContent className="p-2">
                   <div className="relative rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow bg-white">
-                    <div className="aspect-[3/4]">
-                      <div className="w-full h-full transform scale-125 origin-top">
-                        <ResumePreview data={sampleResumeData} themeId={index} />
-                      </div>
+                    <div className="w-full" style={{ height: '180px' }}>
+                      <ResumePreview data={sampleResumeData} themeId={index} scale={0.33} />
                     </div>
                     {/* 模板名称 */}
                     <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-2">
@@ -313,7 +302,7 @@ const HomePage: React.FC = () => {
         <div className="max-w-7xl mx-auto">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div>
-              <h2 className="text-3xl font-bold text-slate-800 mb-6">为什么选择 简历大师？</h2>
+              <h2 className="text-3xl font-bold text-slate-800 mb-6">为什么选择 Kvee？</h2>
               <div className="space-y-6">
                 {[
                   {
@@ -373,10 +362,10 @@ const HomePage: React.FC = () => {
             <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center">
               <FileText className="w-4 h-4 text-white" />
             </div>
-            <span className="text-lg font-bold text-slate-800">简历大师</span>
+            <span className="text-lg font-bold text-slate-800">Kvee</span>
           </div>
           <p className="text-slate-500 text-sm">
-            © 2026 简历大师. 专为程序员打造的简历生成器。
+            © 2026 Kvee. 专为程序员打造的简历生成器。
           </p>
         </div>
       </footer>

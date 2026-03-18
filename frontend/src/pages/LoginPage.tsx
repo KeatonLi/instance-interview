@@ -54,7 +54,7 @@ export default function LoginPage() {
           <div className="mx-auto w-12 h-12 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center mb-4">
             <FileText className="w-6 h-6 text-white" />
           </div>
-          <CardTitle className="text-2xl">登录 简历大师</CardTitle>
+          <CardTitle className="text-2xl">登录 Kvee</CardTitle>
           <CardDescription>登录后管理你的简历</CardDescription>
         </CardHeader>
         <CardContent>
