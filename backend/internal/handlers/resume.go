@@ -82,9 +82,17 @@ func GetResume(c *gin.Context) {
 
 func CreateResume(c *gin.Context) {
 	var req struct {
-		Title      string `json:"title"`
-		ResumeType string `json:"resume_type"`
-		UserID     uint   `json:"user_id"`
+		Title          string `json:"title"`
+		ThemeID        *int   `json:"theme_id"`
+		ResumeType     string `json:"resume_type"`
+		UserID         uint   `json:"user_id"`
+		PersonalInfo   string `json:"personal_info"`
+		Education      string `json:"education"`
+		WorkExperience string `json:"work_experience"`
+		Projects       string `json:"projects"`
+		Skills         string `json:"skills"`
+		Awards         string `json:"awards"`
+		Languages      string `json:"languages"`
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -111,6 +119,31 @@ func CreateResume(c *gin.Context) {
 		Skills:         "[]",
 		Awards:         "[]",
 		Languages:      "[]",
+	}
+
+	if req.ThemeID != nil {
+		resume.ThemeID = *req.ThemeID
+	}
+	if req.PersonalInfo != "" {
+		resume.PersonalInfo = req.PersonalInfo
+	}
+	if req.Education != "" {
+		resume.Education = req.Education
+	}
+	if req.WorkExperience != "" {
+		resume.WorkExperience = req.WorkExperience
+	}
+	if req.Projects != "" {
+		resume.Projects = req.Projects
+	}
+	if req.Skills != "" {
+		resume.Skills = req.Skills
+	}
+	if req.Awards != "" {
+		resume.Awards = req.Awards
+	}
+	if req.Languages != "" {
+		resume.Languages = req.Languages
 	}
 
 	if err := models.CreateResume(resume); err != nil {

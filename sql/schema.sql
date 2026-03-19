@@ -49,6 +49,7 @@ CREATE TABLE IF NOT EXISTS `resumes` (
     `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT '简历ID',
     `user_id` bigint unsigned NOT NULL COMMENT '所属用户ID',
     `title` varchar(255) NOT NULL COMMENT '简历标题',
+    `theme_id` int DEFAULT 0 COMMENT '模板ID',
     `resume_type` varchar(50) DEFAULT 'full' COMMENT '简历类型:
         full-完整版,
         simple-简洁版,
@@ -98,11 +99,12 @@ INSERT INTO `users` (`username`, `email`, `password`, `nickname`, `status`)
 VALUES ('demo', 'demo@example.com', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iAt6Z5EH', '演示用户', 'active');
 
 -- 插入示例简历
-INSERT INTO `resumes` (`user_id`, `title`, `resume_type`, `is_default`, `status`, `personal_info`, `skills`)
+INSERT INTO `resumes` (`user_id`, `title`, `theme_id`, `resume_type`, `is_default`, `status`, `personal_info`, `skills`)
 VALUES
 (
     1,
     '高级后端工程师',
+    0,
     'backend',
     1,
     'published',

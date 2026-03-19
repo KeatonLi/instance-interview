@@ -98,7 +98,7 @@ const EditorPage: React.FC = () => {
         clearTimeout(autoSaveTimerRef.current);
       }
     };
-  }, [hasChanges, resumeData, resumeTitle]);
+  }, [hasChanges, resumeData, resumeTitle, themeId]);
 
   const loadResume = async (resumeId: number) => {
     setLoading(true);
@@ -127,12 +127,14 @@ const EditorPage: React.FC = () => {
       if (id) {
         await resumeApi.updateResume(parseInt(id), {
           title: resumeTitle,
+          theme_id: themeId,
           resume_data: resumeData,
         });
       } else {
         const res = await resumeApi.createResume({
           title: resumeTitle || resumeData.personalInfo.name || '我的简历',
           user_id: user.id,
+          theme_id: themeId,
           resume_data: resumeData,
         });
         navigate(`/editor/${res.data.id}`, { replace: true });
@@ -153,6 +155,7 @@ const EditorPage: React.FC = () => {
     try {
       await resumeApi.updateResume(parseInt(id), {
         title: resumeTitle,
+        theme_id: themeId,
         resume_data: resumeData,
       });
       setHasChanges(false);
@@ -192,6 +195,7 @@ const EditorPage: React.FC = () => {
 
   const handleThemeChange = useCallback(async (newThemeId: number) => {
     setThemeId(newThemeId);
+    setHasChanges(true);
     if (id) {
       try {
         await resumeApi.updateResume(parseInt(id), {

@@ -48,6 +48,7 @@ export interface ResumeResponse {
 export interface ResumeCreateRequest {
   title: string;
   user_id: number;
+  theme_id?: number;
   resume_data?: ResumeData;
 }
 
@@ -149,6 +150,7 @@ export const resumeApi = {
       title: data.title,
       user_id: data.user_id,
     };
+    if (data.theme_id !== undefined) body.theme_id = data.theme_id;
     if (data.resume_data) {
       Object.assign(body, buildResumePayload(data.resume_data));
     }
