@@ -278,6 +278,50 @@
 }
 ```
 
+### 2.6 导入简历（PDF 解析）
+- **URL**: `/api/v1/resumes/import`
+- **方法**: `POST`
+- **说明**: 上传 PDF 简历文件，自动解析并创建新简历
+- **Headers**: `Authorization: Bearer <token>`
+- **Content-Type**: `multipart/form-data`
+- **请求参数**:
+  - `file` (必填): PDF 文件，大小不超过 10MB
+- **响应**:
+```json
+{
+  "code": 0,
+  "message": "导入成功",
+  "data": {
+    "resume": {
+      "id": 1,
+      "title": "张三的简历",
+      "user_id": 1,
+      "status": "draft",
+      ...
+    },
+    "raw_text": "解析出的原始文本内容...",
+    "parsed": {
+      "personal_info": {
+        "name": "张三",
+        "email": "zhangsan@example.com",
+        "phone": "13800138000"
+      },
+      "education": [...],
+      "work_experience": [...],
+      "projects": [...],
+      "skills": [...]
+    }
+  }
+}
+```
+- **错误响应**:
+```json
+{
+  "code": 1,
+  "error": "请上传 PDF 格式的文件"
+}
+```
+
 ---
 
 ## 三、健康检查

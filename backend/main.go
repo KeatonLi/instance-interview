@@ -61,6 +61,7 @@ func main() {
 				resumes.GET("", handlers.GetResumes)
 				resumes.GET("/:id", handlers.GetResume)
 				resumes.POST("", handlers.CreateResume)
+				resumes.POST("/import", handlers.ImportResume) // PDF 导入简历
 				resumes.PUT("/:id", handlers.UpdateResume)
 				resumes.DELETE("/:id", handlers.DeleteResume)
 			}
