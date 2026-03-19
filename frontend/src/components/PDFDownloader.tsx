@@ -2,16 +2,23 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Download, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 import type { ResumeData } from '@/types/resume';
-import { generateResumePDF } from './ResumePDF';
+import { sanitizeResumeFilename } from '@/lib/resumeData';
 
 interface PDFDownloaderProps {
-  resumeData: ResumeData;
+  resumeData?: ResumeData;
+  loadResumeData?: () => Promise<ResumeData>;
   filename?: string;
+  className?: string;
 }
 
 type ExportStatus = 'idle' | 'generating' | 'success' | 'error';
 
-const PDFDownloader: React.FC<PDFDownloaderProps> = ({ resumeData, filename = 'resume' }) => {
+const PDFDownloader: React.FC<PDFDownloaderProps> = ({
+  resumeData,
+  loadResumeData,
+  filename = 'resume',
+  className = '',
+}) => {
   const [status, setStatus] = useState<ExportStatus>('idle');
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -22,9 +29,15 @@ const PDFDownloader: React.FC<PDFDownloaderProps> = ({ resumeData, filename = 'r
     setErrorMessage('');
 
     try {
+      const data = loadResumeData ? await loadResumeData() : resumeData;
+      if (!data) {
+        throw new Error('未找到可导出的简历内容');
+      }
+
+      const { generateResumePDF } = await import('./ResumePDF');
       await generateResumePDF({
-        data: resumeData,
-        filename: filename || 'resume'
+        data,
+        filename: sanitizeResumeFilename(filename),
       });
 
       setStatus('success');
@@ -85,7 +98,7 @@ const PDFDownloader: React.FC<PDFDownloaderProps> = ({ resumeData, filename = 'r
         onClick={downloadPDF}
         disabled={status === 'generating'}
         variant={getButtonVariant()}
-        className="w-full shadow-md hover:shadow-lg transition-all duration-200"
+        className={`w-full shadow-md hover:shadow-lg transition-all duration-200 ${className}`}
       >
         {getButtonContent()}
       </Button>

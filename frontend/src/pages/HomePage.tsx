@@ -21,65 +21,7 @@ import {
 import Navbar from '@/components/Navbar';
 import { themes } from '@/styles/resumeThemes';
 import ResumePreview from '@/components/ResumePreview';
-import type { ResumeData } from '@/types/resume';
-
-// 示例数据
-const sampleResumeData: ResumeData = {
-  personalInfo: {
-    name: '张明远',
-    title: '高级前端工程师',
-    email: 'zhangmingyuan@email.com',
-    phone: '138-1234-5678',
-    location: '上海市浦东新区',
-    linkedin: 'linkedin.com/in/zhangmingyuan',
-    github: 'github.com/zhangmingyuan',
-    website: 'zhangmingyuan.dev',
-    summary: '5年全栈开发经验，擅长 React、TypeScript、Node.js。',
-  },
-  education: [
-    {
-      id: '1',
-      school: '上海交通大学',
-      degree: '硕士',
-      field: '计算机科学与技术',
-      startDate: '2016-09',
-      endDate: '2019-06',
-      gpa: '3.9/4.0',
-      description: '',
-    },
-  ],
-  workExperience: [
-    {
-      id: '1',
-      company: '字节跳动',
-      position: '高级前端工程师',
-      startDate: '2021-03',
-      endDate: '',
-      current: true,
-      description: '负责抖音电商后台系统开发',
-      achievements: ['主导微前端架构改造', '设计组件库被10+团队复用'],
-    },
-  ],
-  projects: [
-    {
-      id: '1',
-      name: '智能代码审查平台',
-      role: '项目负责人',
-      startDate: '2023-01',
-      endDate: '2023-08',
-      current: false,
-      description: '基于AI的代码审查工具',
-      technologies: ['React', 'TypeScript', 'Node.js'],
-      link: '',
-    },
-  ],
-  skills: [
-    { id: '1', category: '前端', items: ['React', 'Vue', 'TypeScript'] },
-    { id: '2', category: '后端', items: ['Node.js', 'Go', 'Python'] },
-  ],
-  awards: [],
-  languages: [{ id: '1', name: '中文', level: '母语' }],
-};
+import { sampleResumeData } from '@/lib/sampleResumeData';
 
 const HomePage: React.FC = () => {
   const { user } = useAuth();

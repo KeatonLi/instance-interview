@@ -1,5 +1,6 @@
 import type { ResumeData } from '@/types/resume';
 import { API_BASE_URL } from '@/config';
+import { buildResumePayload } from '@/lib/resumeData';
 
 export interface Resume {
   id: number;
@@ -93,6 +94,49 @@ export const api = {
   delete: <T>(endpoint: string) => request<T>(endpoint, { method: 'DELETE' }),
 };
 
+// PDF 导入简历响应
+export interface ImportResumeResponse {
+  code: number;
+  message: string;
+  data: {
+    resume: Resume;
+    raw_text: string;
+    parsed: {
+      personal_info: Record<string, unknown>;
+      education: unknown[];
+      work_experience: unknown[];
+      projects: unknown[];
+      skills: unknown[];
+    };
+  };
+}
+
+// 上传文件的辅助函数
+async function uploadFile<T>(endpoint: string, file: File): Promise<T> {
+  const token = getToken();
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const headers: Record<string, string> = {};
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const response = await fetch(API_BASE_URL + endpoint, {
+    method: 'POST',
+    headers,
+    body: formData,
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.message || data.error || 'Upload failed');
+  }
+
+  return data;
+}
+
 export const resumeApi = {
   getResumes: () =>
     api.get<ResumeListResponse>('/resumes'),
@@ -105,15 +149,8 @@ export const resumeApi = {
       title: data.title,
       user_id: data.user_id,
     };
-    // 将 resume_data 转换为后端需要的 JSON 字符串字段
     if (data.resume_data) {
-      body.personal_info = JSON.stringify(data.resume_data.personalInfo);
-      body.education = JSON.stringify(data.resume_data.education);
-      body.work_experience = JSON.stringify(data.resume_data.workExperience);
-      body.projects = JSON.stringify(data.resume_data.projects);
-      body.skills = JSON.stringify(data.resume_data.skills);
-      body.awards = JSON.stringify(data.resume_data.awards);
-      body.languages = JSON.stringify(data.resume_data.languages);
+      Object.assign(body, buildResumePayload(data.resume_data));
     }
     return api.post<ResumeResponse>('/resumes', body);
   },
@@ -122,19 +159,16 @@ export const resumeApi = {
     const body: Record<string, unknown> = {};
     if (data.title) body.title = data.title;
     if (data.theme_id !== undefined) body.theme_id = data.theme_id;
-    // 将 resume_data 转换为后端需要的 JSON 字符串字段
     if (data.resume_data) {
-      body.personal_info = JSON.stringify(data.resume_data.personalInfo);
-      body.education = JSON.stringify(data.resume_data.education);
-      body.work_experience = JSON.stringify(data.resume_data.workExperience);
-      body.projects = JSON.stringify(data.resume_data.projects);
-      body.skills = JSON.stringify(data.resume_data.skills);
-      body.awards = JSON.stringify(data.resume_data.awards);
-      body.languages = JSON.stringify(data.resume_data.languages);
+      Object.assign(body, buildResumePayload(data.resume_data));
     }
     return api.put<ResumeResponse>(`/resumes/${id}`, body);
   },
 
   deleteResume: (id: number) =>
     api.delete<{ code: number; message: string }>(`/resumes/${id}`),
+
+  // PDF 导入简历
+  importResume: (file: File) =>
+    uploadFile<ImportResumeResponse>('/resumes/import', file),
 };

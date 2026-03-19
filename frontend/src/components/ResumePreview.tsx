@@ -69,6 +69,7 @@ const ResumePreview: React.FC<ResumePreviewProps> = ({ data, themeId = 0, scale 
 const ClassicLayout: React.FC<{ data: ResumeData; theme: typeof classicTheme; formatDate: (s: string) => string }> = ({ data, theme, formatDate }) => {
   const c = theme.colors;
   const f = theme.fonts;
+  const sectionTitleStyle = { color: c.title, borderBottomColor: c.accent };
 
   return (
     <div className="w-[540px] min-h-[766px] bg-white mx-auto rounded-xl shadow-xl overflow-hidden font-sans">
@@ -80,7 +81,9 @@ const ClassicLayout: React.FC<{ data: ResumeData; theme: typeof classicTheme; fo
           </div>
           <div className="flex-1">
             <h1 className={`${f.size.name} ${f.name} text-white tracking-wide`}>{data.personalInfo.name || 'Your Name'}</h1>
-            <p className={`${f.size.title} text-[${c.headerSubtitle}] mt-0.5`}>{data.personalInfo.title || 'Professional Title'}</p>
+            <p className={`${f.size.title} mt-0.5`} style={{ color: c.headerSubtitle }}>
+              {data.personalInfo.title || 'Professional Title'}
+            </p>
           </div>
         </div>
         <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-4 text-[9px] text-white/70">
@@ -98,30 +101,30 @@ const ClassicLayout: React.FC<{ data: ResumeData; theme: typeof classicTheme; fo
       <div className="px-6 py-4">
         {data.personalInfo.summary && (
           <div className="mb-4">
-            <h2 className={`${f.size.sectionTitle} ${f.name} text-[${c.title}] border-b-2 border-[${c.accent}] pb-1 mb-2`}>About Me</h2>
-            <p className={`${f.size.body} text-[${c.text}] leading-relaxed`}>{data.personalInfo.summary}</p>
+            <h2 className={`${f.size.sectionTitle} ${f.name} border-b-2 pb-1 mb-2`} style={sectionTitleStyle}>About Me</h2>
+            <p className={`${f.size.body} leading-relaxed`} style={{ color: c.text }}>{data.personalInfo.summary}</p>
           </div>
         )}
 
         {data.workExperience.length > 0 && (
           <div className="mb-4">
-            <h2 className={`${f.size.sectionTitle} ${f.name} text-[${c.title}] border-b-2 border-[${c.accent}] pb-1 mb-2`}>Experience</h2>
+            <h2 className={`${f.size.sectionTitle} ${f.name} border-b-2 pb-1 mb-2`} style={sectionTitleStyle}>Experience</h2>
             {data.workExperience.map(exp => (
-              <div key={exp.id} className="mb-3 pl-3 border-l-2 border-[${c.border}]">
+              <div key={exp.id} className="mb-3 pl-3 border-l-2" style={{ borderLeftColor: c.border }}>
                 <div className="flex justify-between items-start">
                   <div>
-                    <h3 className={`${f.size.itemTitle} ${f.name} text-[${c.title}]`}>{exp.position}</h3>
-                    <p className={`${f.size.itemSub} text-[${c.subtitle}]`}>{exp.company}</p>
+                    <h3 className={`${f.size.itemTitle} ${f.name}`} style={{ color: c.title }}>{exp.position}</h3>
+                    <p className={`${f.size.itemSub}`} style={{ color: c.subtitle }}>{exp.company}</p>
                   </div>
-                  <span className={`${f.size.date} text-[${c.date}] bg-[${c.skillBg}] px-1.5 py-0.5 rounded`}>
+                  <span className={`${f.size.date} px-1.5 py-0.5 rounded`} style={{ color: c.date, backgroundColor: c.skillBg }}>
                     {formatDate(exp.startDate)} - {exp.current ? 'Present' : formatDate(exp.endDate)}
                   </span>
                 </div>
-                {exp.description && <p className={`${f.size.body} text-[${c.text}] mt-1.5 leading-relaxed`}>{exp.description}</p>}
+                {exp.description && <p className={`${f.size.body} mt-1.5 leading-relaxed`} style={{ color: c.text }}>{exp.description}</p>}
                 {exp.achievements.length > 0 && (
                   <ul className="mt-1.5 space-y-0.5">
                     {exp.achievements.map((a, i) => (
-                      <li key={i} className={`${f.size.body} text-[${c.textLight}] pl-2 relative`}>▸ {a}</li>
+                      <li key={i} className={`${f.size.body} pl-2 relative`} style={{ color: c.textLight }}>▸ {a}</li>
                     ))}
                   </ul>
                 )}
@@ -132,23 +135,23 @@ const ClassicLayout: React.FC<{ data: ResumeData; theme: typeof classicTheme; fo
 
         {data.projects.length > 0 && (
           <div className="mb-4">
-            <h2 className={`${f.size.sectionTitle} ${f.name} text-[${c.title}] border-b-2 border-[${c.accent}] pb-1 mb-2`}>Projects</h2>
+            <h2 className={`${f.size.sectionTitle} ${f.name} border-b-2 pb-1 mb-2`} style={sectionTitleStyle}>Projects</h2>
             {data.projects.map(p => (
-              <div key={p.id} className="mb-3 pl-3 border-l-2 border-[${c.border}]">
+              <div key={p.id} className="mb-3 pl-3 border-l-2" style={{ borderLeftColor: c.border }}>
                 <div className="flex justify-between items-start">
                   <div>
-                    <h3 className={`${f.size.itemTitle} ${f.name} text-[${c.title}]`}>{p.name}</h3>
-                    {p.role && <p className={`${f.size.itemSub} text-[${c.subtitle}]`}>{p.role}</p>}
+                    <h3 className={`${f.size.itemTitle} ${f.name}`} style={{ color: c.title }}>{p.name}</h3>
+                    {p.role && <p className={`${f.size.itemSub}`} style={{ color: c.subtitle }}>{p.role}</p>}
                   </div>
-                  <span className={`${f.size.date} text-[${c.date}] bg-[${c.skillBg}] px-1.5 py-0.5 rounded`}>
+                  <span className={`${f.size.date} px-1.5 py-0.5 rounded`} style={{ color: c.date, backgroundColor: c.skillBg }}>
                     {formatDate(p.startDate)} - {p.current ? 'Present' : formatDate(p.endDate)}
                   </span>
                 </div>
-                {p.description && <p className={`${f.size.body} text-[${c.text}] mt-1.5 leading-relaxed`}>{p.description}</p>}
+                {p.description && <p className={`${f.size.body} mt-1.5 leading-relaxed`} style={{ color: c.text }}>{p.description}</p>}
                 {p.technologies.length > 0 && (
                   <div className="flex flex-wrap gap-1 mt-1.5">
                     {p.technologies.map((t, i) => (
-                      <span key={i} className={`${f.size.date} text-[${c.techTag}] bg-[${c.techTagBg}] px-1.5 py-0.5 rounded-full`}>{t}</span>
+                      <span key={i} className={`${f.size.date} px-1.5 py-0.5 rounded-full`} style={{ color: c.techTag, backgroundColor: c.techTagBg }}>{t}</span>
                     ))}
                   </div>
                 )}
@@ -159,15 +162,15 @@ const ClassicLayout: React.FC<{ data: ResumeData; theme: typeof classicTheme; fo
 
         {data.education.length > 0 && (
           <div className="mb-4">
-            <h2 className={`${f.size.sectionTitle} ${f.name} text-[${c.title}] border-b-2 border-[${c.accent}] pb-1 mb-2`}>Education</h2>
+            <h2 className={`${f.size.sectionTitle} ${f.name} border-b-2 pb-1 mb-2`} style={sectionTitleStyle}>Education</h2>
             {data.education.map(e => (
-              <div key={e.id} className="mb-2 pl-3 border-l-2 border-[${c.border}]">
+              <div key={e.id} className="mb-2 pl-3 border-l-2" style={{ borderLeftColor: c.border }}>
                 <div className="flex justify-between items-start">
                   <div>
-                    <h3 className={`${f.size.itemTitle} ${f.name} text-[${c.title}]`}>{e.school}</h3>
-                    <p className={`${f.size.itemSub} text-[${c.subtitle}]`}>{e.degree}{e.field ? ` • ${e.field}` : ''}</p>
+                    <h3 className={`${f.size.itemTitle} ${f.name}`} style={{ color: c.title }}>{e.school}</h3>
+                    <p className={`${f.size.itemSub}`} style={{ color: c.subtitle }}>{e.degree}{e.field ? ` • ${e.field}` : ''}</p>
                   </div>
-                  <span className={`${f.size.date} text-[${c.date}]`}>{formatDate(e.startDate)} - {formatDate(e.endDate)}</span>
+                  <span className={`${f.size.date}`} style={{ color: c.date }}>{formatDate(e.startDate)} - {formatDate(e.endDate)}</span>
                 </div>
               </div>
             ))}
@@ -176,14 +179,20 @@ const ClassicLayout: React.FC<{ data: ResumeData; theme: typeof classicTheme; fo
 
         {data.skills.length > 0 && (
           <div className="mb-4">
-            <h2 className={`${f.size.sectionTitle} ${f.name} text-[${c.title}] border-b-2 border-[${c.accent}] pb-1 mb-2`}>Skills</h2>
+            <h2 className={`${f.size.sectionTitle} ${f.name} border-b-2 pb-1 mb-2`} style={sectionTitleStyle}>Skills</h2>
             <div className="space-y-1">
               {data.skills.map(s => (
                 <div key={s.id} className="flex items-start gap-2">
-                  <span className={`${f.size.itemSub} ${f.name} text-[${c.categoryTitle}] min-w-[60px]`}>{s.category}:</span>
+                  <span className={`${f.size.itemSub} ${f.name} min-w-[60px]`} style={{ color: c.categoryTitle }}>{s.category}:</span>
                   <div className="flex flex-wrap gap-1">
                     {s.items.map((item, i) => (
-                      <span key={i} className={`${f.size.date} text-[${c.title}] bg-[${c.skillBg}] border border-[${c.skillBorder}] px-1.5 py-0.5 rounded`}>{item}</span>
+                      <span
+                        key={i}
+                        className={`${f.size.date} border px-1.5 py-0.5 rounded`}
+                        style={{ color: c.title, backgroundColor: c.skillBg, borderColor: c.skillBorder }}
+                      >
+                        {item}
+                      </span>
                     ))}
                   </div>
                 </div>
@@ -194,11 +203,11 @@ const ClassicLayout: React.FC<{ data: ResumeData; theme: typeof classicTheme; fo
 
         {data.awards.length > 0 && (
           <div className="mb-4">
-            <h2 className={`${f.size.sectionTitle} ${f.name} text-[${c.title}] border-b-2 border-[${c.accent}] pb-1 mb-2`}>Awards</h2>
+            <h2 className={`${f.size.sectionTitle} ${f.name} border-b-2 pb-1 mb-2`} style={sectionTitleStyle}>Awards</h2>
             {data.awards.map(a => (
-              <div key={a.id} className="mb-1.5 flex justify-between items-center pl-3 border-l-2 border-[${c.border}]">
-                <span className={`${f.size.itemTitle} ${f.name} text-[${c.title}]`}>{a.title}</span>
-                <span className={`${f.size.date} text-[${c.date}]`}>{a.date}</span>
+              <div key={a.id} className="mb-1.5 flex justify-between items-center pl-3 border-l-2" style={{ borderLeftColor: c.border }}>
+                <span className={`${f.size.itemTitle} ${f.name}`} style={{ color: c.title }}>{a.title}</span>
+                <span className={`${f.size.date}`} style={{ color: c.date }}>{a.date}</span>
               </div>
             ))}
           </div>
@@ -206,10 +215,14 @@ const ClassicLayout: React.FC<{ data: ResumeData; theme: typeof classicTheme; fo
 
         {data.languages.length > 0 && (
           <div className="mb-4">
-            <h2 className={`${f.size.sectionTitle} ${f.name} text-[${c.title}] border-b-2 border-[${c.accent}] pb-1 mb-2`}>Languages</h2>
+            <h2 className={`${f.size.sectionTitle} ${f.name} border-b-2 pb-1 mb-2`} style={sectionTitleStyle}>Languages</h2>
             <div className="flex flex-wrap gap-2 pl-3">
               {data.languages.filter(l => l.name && l.level).map(l => (
-                <span key={l.id} className={`${f.size.body} text-[${c.title}] bg-[${c.skillBg}] border border-[${c.skillBorder}] px-2 py-0.5 rounded-lg`}>
+                <span
+                  key={l.id}
+                  className={`${f.size.body} border px-2 py-0.5 rounded-lg`}
+                  style={{ color: c.title, backgroundColor: c.skillBg, borderColor: c.skillBorder }}
+                >
                   {l.name} - {l.level}
                 </span>
               ))}
@@ -225,19 +238,27 @@ const ClassicLayout: React.FC<{ data: ResumeData; theme: typeof classicTheme; fo
 const MinimalistLayout: React.FC<{ data: ResumeData; theme: typeof minimalistTheme; formatDate: (s: string) => string }> = ({ data, theme, formatDate }) => {
   const c = theme.colors;
   const f = theme.fonts;
+  const titleStyle = { color: c.title };
+  const subtitleStyle = { color: c.subtitle };
+  const bodyStyle = { color: c.text };
+  const lightTextStyle = { color: c.textLight };
+  const dateStyle = { color: c.date };
+  const contactStyle = { color: c.headerContact };
+  const contactSepStyle = { color: c.headerContactSep };
+  const categoryStyle = { color: c.categoryTitle };
 
   return (
     <div className="w-[540px] min-h-[766px] bg-white mx-auto rounded-xl shadow-xl overflow-hidden font-sans">
       {/* 居中头部 */}
-      <div className="px-6 py-6 text-center border-b border-[${c.border}]">
-        <h1 className={`${f.size.name} ${f.name} text-[${c.headerText}] tracking-wider`}>{data.personalInfo.name || 'Your Name'}</h1>
-        <p className={`${f.size.title} text-[${c.headerSubtitle}] mt-1`}>{data.personalInfo.title || 'Professional Title'}</p>
-        <div className="flex flex-wrap justify-center gap-x-3 gap-y-0.5 mt-3 text-[9px] text-[${c.headerContact}]">
+      <div className="px-6 py-6 text-center border-b" style={{ borderBottomColor: c.border }}>
+        <h1 className={`${f.size.name} ${f.name} tracking-wider`} style={{ color: c.headerText }}>{data.personalInfo.name || 'Your Name'}</h1>
+        <p className={`${f.size.title} mt-1`} style={{ color: c.headerSubtitle }}>{data.personalInfo.title || 'Professional Title'}</p>
+        <div className="flex flex-wrap justify-center gap-x-3 gap-y-0.5 mt-3 text-[9px]" style={contactStyle}>
           {data.personalInfo.email && <span>{data.personalInfo.email}</span>}
-          {data.personalInfo.email && data.personalInfo.phone && <span className="text-[${c.headerContactSep}]">/</span>}
+          {data.personalInfo.email && data.personalInfo.phone && <span style={contactSepStyle}>/</span>}
           {data.personalInfo.phone && <span>{data.personalInfo.phone}</span>}
-          {data.personalInfo.location && <><span className="text-[${c.headerContactSep}]">/</span><span>{data.personalInfo.location}</span></>}
-          {data.personalInfo.github && <><span className="text-[${c.headerContactSep}]">/</span><span className="text-[${c.subtitle}]">{data.personalInfo.github}</span></>}
+          {data.personalInfo.location && <><span style={contactSepStyle}>/</span><span>{data.personalInfo.location}</span></>}
+          {data.personalInfo.github && <><span style={contactSepStyle}>/</span><span style={subtitleStyle}>{data.personalInfo.github}</span></>}
         </div>
       </div>
 
@@ -245,30 +266,30 @@ const MinimalistLayout: React.FC<{ data: ResumeData; theme: typeof minimalistThe
       <div className="px-6 py-4">
         {data.personalInfo.summary && (
           <div className="mb-4 text-center">
-            <h2 className={`${f.size.sectionTitle} ${f.name} text-[${c.title}] uppercase tracking-widest mb-2`}>About Me</h2>
-            <p className={`${f.size.body} text-[${c.text}] leading-relaxed max-w-md mx-auto`}>{data.personalInfo.summary}</p>
+            <h2 className={`${f.size.sectionTitle} ${f.name} uppercase tracking-widest mb-2`} style={titleStyle}>About Me</h2>
+            <p className={`${f.size.body} leading-relaxed max-w-md mx-auto`} style={bodyStyle}>{data.personalInfo.summary}</p>
           </div>
         )}
 
         {data.workExperience.length > 0 && (
           <div className="mb-4">
-            <h2 className={`${f.size.sectionTitle} ${f.name} text-[${c.title}] uppercase tracking-widest mb-3`}>Experience</h2>
+            <h2 className={`${f.size.sectionTitle} ${f.name} uppercase tracking-widest mb-3`} style={titleStyle}>Experience</h2>
             {data.workExperience.map(exp => (
               <div key={exp.id} className="mb-3">
                 <div className="flex justify-between items-start mb-1">
                   <div>
-                    <h3 className={`${f.size.itemTitle} ${f.name} text-[${c.title}]`}>{exp.position}</h3>
-                    <p className={`${f.size.itemSub} text-[${c.subtitle}]`}>{exp.company}</p>
+                    <h3 className={`${f.size.itemTitle} ${f.name}`} style={titleStyle}>{exp.position}</h3>
+                    <p className={`${f.size.itemSub}`} style={subtitleStyle}>{exp.company}</p>
                   </div>
-                  <span className={`${f.size.date} text-[${c.date}]`}>
+                  <span className={`${f.size.date}`} style={dateStyle}>
                     {formatDate(exp.startDate)} - {exp.current ? 'Present' : formatDate(exp.endDate)}
                   </span>
                 </div>
-                {exp.description && <p className={`${f.size.body} text-[${c.text}] mt-1 leading-relaxed`}>{exp.description}</p>}
+                {exp.description && <p className={`${f.size.body} mt-1 leading-relaxed`} style={bodyStyle}>{exp.description}</p>}
                 {exp.achievements.length > 0 && (
                   <ul className="mt-1 space-y-0.5">
                     {exp.achievements.map((a, i) => (
-                      <li key={i} className={`${f.size.body} text-[${c.textLight}]`}>• {a}</li>
+                      <li key={i} className={`${f.size.body}`} style={lightTextStyle}>• {a}</li>
                     ))}
                   </ul>
                 )}
@@ -279,23 +300,23 @@ const MinimalistLayout: React.FC<{ data: ResumeData; theme: typeof minimalistThe
 
         {data.projects.length > 0 && (
           <div className="mb-4">
-            <h2 className={`${f.size.sectionTitle} ${f.name} text-[${c.title}] uppercase tracking-widest mb-3`}>Projects</h2>
+            <h2 className={`${f.size.sectionTitle} ${f.name} uppercase tracking-widest mb-3`} style={titleStyle}>Projects</h2>
             {data.projects.map(p => (
               <div key={p.id} className="mb-3">
                 <div className="flex justify-between items-start mb-1">
                   <div>
-                    <h3 className={`${f.size.itemTitle} ${f.name} text-[${c.title}]`}>{p.name}</h3>
-                    {p.role && <p className={`${f.size.itemSub} text-[${c.subtitle}]`}>{p.role}</p>}
+                    <h3 className={`${f.size.itemTitle} ${f.name}`} style={titleStyle}>{p.name}</h3>
+                    {p.role && <p className={`${f.size.itemSub}`} style={subtitleStyle}>{p.role}</p>}
                   </div>
-                  <span className={`${f.size.date} text-[${c.date}]`}>
+                  <span className={`${f.size.date}`} style={dateStyle}>
                     {formatDate(p.startDate)} - {p.current ? 'Present' : formatDate(p.endDate)}
                   </span>
                 </div>
-                {p.description && <p className={`${f.size.body} text-[${c.text}] mt-1 leading-relaxed`}>{p.description}</p>}
+                {p.description && <p className={`${f.size.body} mt-1 leading-relaxed`} style={bodyStyle}>{p.description}</p>}
                 {p.technologies.length > 0 && (
                   <div className="flex flex-wrap gap-1 mt-1">
                     {p.technologies.map((t, i) => (
-                      <span key={i} className={`${f.size.date} text-[${c.techTag}]`}>{t}</span>
+                      <span key={i} className={`${f.size.date}`} style={{ color: c.techTag }}>{t}</span>
                     ))}
                   </div>
                 )}
@@ -306,15 +327,15 @@ const MinimalistLayout: React.FC<{ data: ResumeData; theme: typeof minimalistThe
 
         {data.education.length > 0 && (
           <div className="mb-4">
-            <h2 className={`${f.size.sectionTitle} ${f.name} text-[${c.title}] uppercase tracking-widest mb-3`}>Education</h2>
+            <h2 className={`${f.size.sectionTitle} ${f.name} uppercase tracking-widest mb-3`} style={titleStyle}>Education</h2>
             {data.education.map(e => (
               <div key={e.id} className="mb-2">
                 <div className="flex justify-between items-start">
                   <div>
-                    <h3 className={`${f.size.itemTitle} ${f.name} text-[${c.title}]`}>{e.school}</h3>
-                    <p className={`${f.size.itemSub} text-[${c.subtitle}]`}>{e.degree}{e.field ? ` • ${e.field}` : ''}</p>
+                    <h3 className={`${f.size.itemTitle} ${f.name}`} style={titleStyle}>{e.school}</h3>
+                    <p className={`${f.size.itemSub}`} style={subtitleStyle}>{e.degree}{e.field ? ` • ${e.field}` : ''}</p>
                   </div>
-                  <span className={`${f.size.date} text-[${c.date}]`}>{formatDate(e.startDate)} - {formatDate(e.endDate)}</span>
+                  <span className={`${f.size.date}`} style={dateStyle}>{formatDate(e.startDate)} - {formatDate(e.endDate)}</span>
                 </div>
               </div>
             ))}
@@ -323,13 +344,13 @@ const MinimalistLayout: React.FC<{ data: ResumeData; theme: typeof minimalistThe
 
         {data.skills.length > 0 && (
           <div className="mb-4">
-            <h2 className={`${f.size.sectionTitle} ${f.name} text-[${c.title}] uppercase tracking-widest mb-3`}>Skills</h2>
+            <h2 className={`${f.size.sectionTitle} ${f.name} uppercase tracking-widest mb-3`} style={titleStyle}>Skills</h2>
             <div className="flex flex-wrap gap-2">
               {data.skills.map(s => (
                 <div key={s.id} className="flex flex-wrap gap-1">
-                  <span className={`${f.size.itemSub} ${f.name} text-[${c.categoryTitle}]`}>{s.category}:</span>
+                  <span className={`${f.size.itemSub} ${f.name}`} style={categoryStyle}>{s.category}:</span>
                   {s.items.map((item, i) => (
-                    <span key={i} className={`${f.size.date} text-[${c.title}]`}>{item}{i < s.items.length - 1 ? ',' : ''}</span>
+                    <span key={i} className={`${f.size.date}`} style={titleStyle}>{item}{i < s.items.length - 1 ? ',' : ''}</span>
                   ))}
                 </div>
               ))}
@@ -339,11 +360,11 @@ const MinimalistLayout: React.FC<{ data: ResumeData; theme: typeof minimalistThe
 
         {data.awards.length > 0 && (
           <div className="mb-4">
-            <h2 className={`${f.size.sectionTitle} ${f.name} text-[${c.title}] uppercase tracking-widest mb-3`}>Awards</h2>
+            <h2 className={`${f.size.sectionTitle} ${f.name} uppercase tracking-widest mb-3`} style={titleStyle}>Awards</h2>
             {data.awards.map(a => (
               <div key={a.id} className="mb-1.5 flex justify-between">
-                <span className={`${f.size.itemTitle} ${f.name} text-[${c.title}]`}>{a.title}</span>
-                <span className={`${f.size.date} text-[${c.date}]`}>{a.date}</span>
+                <span className={`${f.size.itemTitle} ${f.name}`} style={titleStyle}>{a.title}</span>
+                <span className={`${f.size.date}`} style={dateStyle}>{a.date}</span>
               </div>
             ))}
           </div>
@@ -351,10 +372,10 @@ const MinimalistLayout: React.FC<{ data: ResumeData; theme: typeof minimalistThe
 
         {data.languages.length > 0 && (
           <div className="mb-4">
-            <h2 className={`${f.size.sectionTitle} ${f.name} text-[${c.title}] uppercase tracking-widest mb-3`}>Languages</h2>
+            <h2 className={`${f.size.sectionTitle} ${f.name} uppercase tracking-widest mb-3`} style={titleStyle}>Languages</h2>
             <div className="flex flex-wrap gap-3">
               {data.languages.filter(l => l.name && l.level).map(l => (
-                <span key={l.id} className={`${f.size.body} text-[${c.title}]`}>
+                <span key={l.id} className={`${f.size.body}`} style={titleStyle}>
                   <span className="font-semibold">{l.name}</span> - {l.level}
                 </span>
               ))}
@@ -370,6 +391,14 @@ const MinimalistLayout: React.FC<{ data: ResumeData; theme: typeof minimalistThe
 const GradientLayout: React.FC<{ data: ResumeData; theme: typeof gradientTheme; formatDate: (s: string) => string }> = ({ data, theme, formatDate }) => {
   const c = theme.colors;
   const f = theme.fonts;
+  const titleStyle = { color: c.title };
+  const subtitleStyle = { color: c.subtitle };
+  const bodyStyle = { color: c.text };
+  const lightTextStyle = { color: c.textLight };
+  const dateStyle = { color: c.date };
+  const sectionDotStyle = { backgroundColor: c.accent };
+  const softCardStyle = { backgroundColor: c.borderLight };
+  const accentPanelStyle = { backgroundColor: c.accentLight };
 
   return (
     <div className="w-[540px] min-h-[766px] bg-white mx-auto rounded-xl shadow-xl overflow-hidden font-sans">
@@ -392,34 +421,34 @@ const GradientLayout: React.FC<{ data: ResumeData; theme: typeof gradientTheme; 
       {/* 内容 */}
       <div className="px-6 py-4">
         {data.personalInfo.summary && (
-          <div className="mb-4 bg-[${c.accentLight}] rounded-lg p-3">
-            <h2 className={`${f.size.sectionTitle} ${f.name} text-[${c.title}] mb-1`}>About Me</h2>
-            <p className={`${f.size.body} text-[${c.text}] leading-relaxed`}>{data.personalInfo.summary}</p>
+          <div className="mb-4 rounded-lg p-3" style={accentPanelStyle}>
+            <h2 className={`${f.size.sectionTitle} ${f.name} mb-1`} style={titleStyle}>About Me</h2>
+            <p className={`${f.size.body} leading-relaxed`} style={bodyStyle}>{data.personalInfo.summary}</p>
           </div>
         )}
 
         {data.workExperience.length > 0 && (
           <div className="mb-4">
-            <h2 className={`${f.size.sectionTitle} ${f.name} text-[${c.title}] mb-3 flex items-center gap-2`}>
-              <span className="w-2 h-2 rounded-full bg-[${c.accent}]"></span>
+            <h2 className={`${f.size.sectionTitle} ${f.name} mb-3 flex items-center gap-2`} style={titleStyle}>
+              <span className="w-2 h-2 rounded-full" style={sectionDotStyle}></span>
               Experience
             </h2>
             {data.workExperience.map(exp => (
-              <div key={exp.id} className="mb-3 p-3 bg-[${c.borderLight}] rounded-lg">
+              <div key={exp.id} className="mb-3 p-3 rounded-lg" style={softCardStyle}>
                 <div className="flex justify-between items-start">
                   <div>
-                    <h3 className={`${f.size.itemTitle} ${f.name} text-[${c.title}]`}>{exp.position}</h3>
-                    <p className={`${f.size.itemSub} text-[${c.subtitle}]`}>{exp.company}</p>
+                    <h3 className={`${f.size.itemTitle} ${f.name}`} style={titleStyle}>{exp.position}</h3>
+                    <p className={`${f.size.itemSub}`} style={subtitleStyle}>{exp.company}</p>
                   </div>
-                  <span className={`${f.size.date} text-[${c.date}] bg-white px-2 py-0.5 rounded`}>
+                  <span className={`${f.size.date} bg-white px-2 py-0.5 rounded`} style={dateStyle}>
                     {formatDate(exp.startDate)} - {exp.current ? 'Present' : formatDate(exp.endDate)}
                   </span>
                 </div>
-                {exp.description && <p className={`${f.size.body} text-[${c.text}] mt-2`}>{exp.description}</p>}
+                {exp.description && <p className={`${f.size.body} mt-2`} style={bodyStyle}>{exp.description}</p>}
                 {exp.achievements.length > 0 && (
                   <ul className="mt-2 space-y-0.5">
                     {exp.achievements.map((a, i) => (
-                      <li key={i} className={`${f.size.body} text-[${c.textLight}] pl-2`}>• {a}</li>
+                      <li key={i} className={`${f.size.body} pl-2`} style={lightTextStyle}>• {a}</li>
                     ))}
                   </ul>
                 )}
@@ -430,26 +459,26 @@ const GradientLayout: React.FC<{ data: ResumeData; theme: typeof gradientTheme; 
 
         {data.projects.length > 0 && (
           <div className="mb-4">
-            <h2 className={`${f.size.sectionTitle} ${f.name} text-[${c.title}] mb-3 flex items-center gap-2`}>
-              <span className="w-2 h-2 rounded-full bg-[${c.accent}]"></span>
+            <h2 className={`${f.size.sectionTitle} ${f.name} mb-3 flex items-center gap-2`} style={titleStyle}>
+              <span className="w-2 h-2 rounded-full" style={sectionDotStyle}></span>
               Projects
             </h2>
             {data.projects.map(p => (
-              <div key={p.id} className="mb-3 p-3 bg-[${c.borderLight}] rounded-lg">
+              <div key={p.id} className="mb-3 p-3 rounded-lg" style={softCardStyle}>
                 <div className="flex justify-between items-start">
                   <div>
-                    <h3 className={`${f.size.itemTitle} ${f.name} text-[${c.title}]`}>{p.name}</h3>
-                    {p.role && <p className={`${f.size.itemSub} text-[${c.subtitle}]`}>{p.role}</p>}
+                    <h3 className={`${f.size.itemTitle} ${f.name}`} style={titleStyle}>{p.name}</h3>
+                    {p.role && <p className={`${f.size.itemSub}`} style={subtitleStyle}>{p.role}</p>}
                   </div>
-                  <span className={`${f.size.date} text-[${c.date}] bg-white px-2 py-0.5 rounded`}>
+                  <span className={`${f.size.date} bg-white px-2 py-0.5 rounded`} style={dateStyle}>
                     {formatDate(p.startDate)} - {p.current ? 'Present' : formatDate(p.endDate)}
                   </span>
                 </div>
-                {p.description && <p className={`${f.size.body} text-[${c.text}] mt-2`}>{p.description}</p>}
+                {p.description && <p className={`${f.size.body} mt-2`} style={bodyStyle}>{p.description}</p>}
                 {p.technologies.length > 0 && (
                   <div className="flex flex-wrap gap-1 mt-2">
                     {p.technologies.map((t, i) => (
-                      <span key={i} className={`${f.size.date} text-[${c.techTag}] bg-white px-2 py-0.5 rounded-full`}>{t}</span>
+                      <span key={i} className={`${f.size.date} bg-white px-2 py-0.5 rounded-full`} style={{ color: c.techTag }}>{t}</span>
                     ))}
                   </div>
                 )}
@@ -460,18 +489,18 @@ const GradientLayout: React.FC<{ data: ResumeData; theme: typeof gradientTheme; 
 
         {data.education.length > 0 && (
           <div className="mb-4">
-            <h2 className={`${f.size.sectionTitle} ${f.name} text-[${c.title}] mb-3 flex items-center gap-2`}>
-              <span className="w-2 h-2 rounded-full bg-[${c.accent}]"></span>
+            <h2 className={`${f.size.sectionTitle} ${f.name} mb-3 flex items-center gap-2`} style={titleStyle}>
+              <span className="w-2 h-2 rounded-full" style={sectionDotStyle}></span>
               Education
             </h2>
             {data.education.map(e => (
-              <div key={e.id} className="mb-2 p-3 bg-[${c.borderLight}] rounded-lg">
+              <div key={e.id} className="mb-2 p-3 rounded-lg" style={softCardStyle}>
                 <div className="flex justify-between items-start">
                   <div>
-                    <h3 className={`${f.size.itemTitle} ${f.name} text-[${c.title}]`}>{e.school}</h3>
-                    <p className={`${f.size.itemSub} text-[${c.subtitle}]`}>{e.degree}{e.field ? ` • ${e.field}` : ''}</p>
+                    <h3 className={`${f.size.itemTitle} ${f.name}`} style={titleStyle}>{e.school}</h3>
+                    <p className={`${f.size.itemSub}`} style={subtitleStyle}>{e.degree}{e.field ? ` • ${e.field}` : ''}</p>
                   </div>
-                  <span className={`${f.size.date} text-[${c.date}]`}>{formatDate(e.startDate)} - {formatDate(e.endDate)}</span>
+                  <span className={`${f.size.date}`} style={dateStyle}>{formatDate(e.startDate)} - {formatDate(e.endDate)}</span>
                 </div>
               </div>
             ))}
@@ -480,16 +509,16 @@ const GradientLayout: React.FC<{ data: ResumeData; theme: typeof gradientTheme; 
 
         {data.skills.length > 0 && (
           <div className="mb-4">
-            <h2 className={`${f.size.sectionTitle} ${f.name} text-[${c.title}] mb-3 flex items-center gap-2`}>
-              <span className="w-2 h-2 rounded-full bg-[${c.accent}]"></span>
+            <h2 className={`${f.size.sectionTitle} ${f.name} mb-3 flex items-center gap-2`} style={titleStyle}>
+              <span className="w-2 h-2 rounded-full" style={sectionDotStyle}></span>
               Skills
             </h2>
             <div className="flex flex-wrap gap-2">
               {data.skills.map(s => (
-                <div key={s.id} className="flex flex-wrap gap-1 p-2 bg-[${c.borderLight}] rounded-lg">
-                  <span className={`${f.size.itemSub} ${f.name} text-[${c.categoryTitle}]`}>{s.category}:</span>
+                <div key={s.id} className="flex flex-wrap gap-1 p-2 rounded-lg" style={softCardStyle}>
+                  <span className={`${f.size.itemSub} ${f.name}`} style={{ color: c.categoryTitle }}>{s.category}:</span>
                   {s.items.map((item, i) => (
-                    <span key={i} className={`${f.size.date} text-[${c.techTag}] bg-white px-1.5 py-0.5 rounded`}>{item}</span>
+                    <span key={i} className={`${f.size.date} bg-white px-1.5 py-0.5 rounded`} style={{ color: c.techTag }}>{item}</span>
                   ))}
                 </div>
               ))}
@@ -499,14 +528,14 @@ const GradientLayout: React.FC<{ data: ResumeData; theme: typeof gradientTheme; 
 
         {data.awards.length > 0 && (
           <div className="mb-4">
-            <h2 className={`${f.size.sectionTitle} ${f.name} text-[${c.title}] mb-3 flex items-center gap-2`}>
-              <span className="w-2 h-2 rounded-full bg-[${c.accent}]"></span>
+            <h2 className={`${f.size.sectionTitle} ${f.name} mb-3 flex items-center gap-2`} style={titleStyle}>
+              <span className="w-2 h-2 rounded-full" style={sectionDotStyle}></span>
               Awards
             </h2>
             {data.awards.map(a => (
-              <div key={a.id} className="mb-1.5 flex justify-between items-center p-2 bg-[${c.borderLight}] rounded-lg">
-                <span className={`${f.size.itemTitle} ${f.name} text-[${c.title}]`}>{a.title}</span>
-                <span className={`${f.size.date} text-[${c.date}]`}>{a.date}</span>
+              <div key={a.id} className="mb-1.5 flex justify-between items-center p-2 rounded-lg" style={softCardStyle}>
+                <span className={`${f.size.itemTitle} ${f.name}`} style={titleStyle}>{a.title}</span>
+                <span className={`${f.size.date}`} style={dateStyle}>{a.date}</span>
               </div>
             ))}
           </div>
@@ -514,13 +543,13 @@ const GradientLayout: React.FC<{ data: ResumeData; theme: typeof gradientTheme; 
 
         {data.languages.length > 0 && (
           <div className="mb-4">
-            <h2 className={`${f.size.sectionTitle} ${f.name} text-[${c.title}] mb-3 flex items-center gap-2`}>
-              <span className="w-2 h-2 rounded-full bg-[${c.accent}]"></span>
+            <h2 className={`${f.size.sectionTitle} ${f.name} mb-3 flex items-center gap-2`} style={titleStyle}>
+              <span className="w-2 h-2 rounded-full" style={sectionDotStyle}></span>
               Languages
             </h2>
             <div className="flex flex-wrap gap-2">
               {data.languages.filter(l => l.name && l.level).map(l => (
-                <span key={l.id} className={`${f.size.body} text-[${c.title}] bg-[${c.accentLight}] px-3 py-1 rounded-full`}>
+                <span key={l.id} className={`${f.size.body} px-3 py-1 rounded-full`} style={{ color: c.title, backgroundColor: c.accentLight }}>
                   {l.name} - {l.level}
                 </span>
               ))}
@@ -685,6 +714,11 @@ const TimelineLayout: React.FC<{ data: ResumeData; theme: typeof timelineTheme; 
 const SidebarLayout: React.FC<{ data: ResumeData; theme: typeof sidebarTheme; formatDate: (s: string) => string }> = ({ data, theme, formatDate }) => {
   const c = theme.colors;
   const f = theme.fonts;
+  const titleStyle = { color: c.title };
+  const subtitleStyle = { color: c.subtitle };
+  const bodyStyle = { color: c.text };
+  const lightTextStyle = { color: c.textLight };
+  const dateStyle = { color: c.date };
 
   return (
     <div className="w-[540px] min-h-[766px] bg-white mx-auto rounded-xl shadow-xl overflow-hidden font-sans">
@@ -760,38 +794,38 @@ const SidebarLayout: React.FC<{ data: ResumeData; theme: typeof sidebarTheme; fo
         <div className="flex-1 p-4">
           {/* 头部 */}
           <div className="mb-4 pb-3 border-b-2 border-orange-500">
-            <h1 className={`${f.size.name} ${f.name} text-[${c.title}] text-xl`}>{data.personalInfo.name || 'Your Name'}</h1>
-            <p className={`${f.size.title} text-[${c.subtitle}] mt-0.5`}>{data.personalInfo.title || 'Professional Title'}</p>
+            <h1 className={`${f.size.name} ${f.name} text-xl`} style={titleStyle}>{data.personalInfo.name || 'Your Name'}</h1>
+            <p className={`${f.size.title} mt-0.5`} style={subtitleStyle}>{data.personalInfo.title || 'Professional Title'}</p>
           </div>
 
           {/* Summary */}
           {data.personalInfo.summary && (
             <div className="mb-4">
-              <h2 className={`${f.size.sectionTitle} ${f.name} text-[${c.title}] border-b border-orange-200 pb-1 mb-2`}>About Me</h2>
-              <p className={`${f.size.body} text-[${c.text}] leading-relaxed`}>{data.personalInfo.summary}</p>
+              <h2 className={`${f.size.sectionTitle} ${f.name} border-b border-orange-200 pb-1 mb-2`} style={titleStyle}>About Me</h2>
+              <p className={`${f.size.body} leading-relaxed`} style={bodyStyle}>{data.personalInfo.summary}</p>
             </div>
           )}
 
           {/* Experience */}
           {data.workExperience.length > 0 && (
             <div className="mb-4">
-              <h2 className={`${f.size.sectionTitle} ${f.name} text-[${c.title}] border-b border-orange-200 pb-1 mb-2`}>Experience</h2>
+              <h2 className={`${f.size.sectionTitle} ${f.name} border-b border-orange-200 pb-1 mb-2`} style={titleStyle}>Experience</h2>
               {data.workExperience.map(exp => (
                 <div key={exp.id} className="mb-3">
                   <div className="flex justify-between items-start">
                     <div>
-                      <h3 className={`${f.size.itemTitle} ${f.name} text-[${c.title}]`}>{exp.position}</h3>
-                      <p className={`${f.size.itemSub} text-[${c.subtitle}]`}>{exp.company}</p>
+                      <h3 className={`${f.size.itemTitle} ${f.name}`} style={titleStyle}>{exp.position}</h3>
+                      <p className={`${f.size.itemSub}`} style={subtitleStyle}>{exp.company}</p>
                     </div>
-                    <span className={`${f.size.date} text-[${c.date}] bg-orange-50 px-1.5 py-0.5 rounded`}>
+                    <span className={`${f.size.date} bg-orange-50 px-1.5 py-0.5 rounded`} style={dateStyle}>
                       {formatDate(exp.startDate)} - {exp.current ? 'Now' : formatDate(exp.endDate)}
                     </span>
                   </div>
-                  {exp.description && <p className={`${f.size.body} text-[${c.text}] mt-1`}>{exp.description}</p>}
+                  {exp.description && <p className={`${f.size.body} mt-1`} style={bodyStyle}>{exp.description}</p>}
                   {exp.achievements.length > 0 && (
                     <ul className="mt-1 space-y-0.5">
                       {exp.achievements.map((a, i) => (
-                        <li key={i} className={`${f.size.body} text-[${c.textLight}] pl-2`}>• {a}</li>
+                        <li key={i} className={`${f.size.body} pl-2`} style={lightTextStyle}>• {a}</li>
                       ))}
                     </ul>
                   )}
@@ -803,19 +837,19 @@ const SidebarLayout: React.FC<{ data: ResumeData; theme: typeof sidebarTheme; fo
           {/* Projects */}
           {data.projects.length > 0 && (
             <div className="mb-4">
-              <h2 className={`${f.size.sectionTitle} ${f.name} text-[${c.title}] border-b border-orange-200 pb-1 mb-2`}>Projects</h2>
+              <h2 className={`${f.size.sectionTitle} ${f.name} border-b border-orange-200 pb-1 mb-2`} style={titleStyle}>Projects</h2>
               {data.projects.map(p => (
                 <div key={p.id} className="mb-3">
                   <div className="flex justify-between items-start">
                     <div>
-                      <h3 className={`${f.size.itemTitle} ${f.name} text-[${c.title}]`}>{p.name}</h3>
-                      {p.role && <p className={`${f.size.itemSub} text-[${c.subtitle}]`}>{p.role}</p>}
+                      <h3 className={`${f.size.itemTitle} ${f.name}`} style={titleStyle}>{p.name}</h3>
+                      {p.role && <p className={`${f.size.itemSub}`} style={subtitleStyle}>{p.role}</p>}
                     </div>
-                    <span className={`${f.size.date} text-[${c.date}] bg-orange-50 px-1.5 py-0.5 rounded`}>
+                    <span className={`${f.size.date} bg-orange-50 px-1.5 py-0.5 rounded`} style={dateStyle}>
                       {formatDate(p.startDate)} - {p.current ? 'Now' : formatDate(p.endDate)}
                     </span>
                   </div>
-                  {p.description && <p className={`${f.size.body} text-[${c.text}] mt-1`}>{p.description}</p>}
+                  {p.description && <p className={`${f.size.body} mt-1`} style={bodyStyle}>{p.description}</p>}
                   {p.technologies.length > 0 && (
                     <div className="flex flex-wrap gap-1 mt-1">
                       {p.technologies.map((t, i) => (
@@ -831,15 +865,15 @@ const SidebarLayout: React.FC<{ data: ResumeData; theme: typeof sidebarTheme; fo
           {/* Education */}
           {data.education.length > 0 && (
             <div className="mb-4">
-              <h2 className={`${f.size.sectionTitle} ${f.name} text-[${c.title}] border-b border-orange-200 pb-1 mb-2`}>Education</h2>
+              <h2 className={`${f.size.sectionTitle} ${f.name} border-b border-orange-200 pb-1 mb-2`} style={titleStyle}>Education</h2>
               {data.education.map(e => (
                 <div key={e.id} className="mb-2">
                   <div className="flex justify-between items-start">
                     <div>
-                      <h3 className={`${f.size.itemTitle} ${f.name} text-[${c.title}]`}>{e.school}</h3>
-                      <p className={`${f.size.itemSub} text-[${c.subtitle}]`}>{e.degree}{e.field ? ` • ${e.field}` : ''}</p>
+                      <h3 className={`${f.size.itemTitle} ${f.name}`} style={titleStyle}>{e.school}</h3>
+                      <p className={`${f.size.itemSub}`} style={subtitleStyle}>{e.degree}{e.field ? ` • ${e.field}` : ''}</p>
                     </div>
-                    <span className={`${f.size.date} text-[${c.date}]`}>{formatDate(e.startDate)} - {formatDate(e.endDate)}</span>
+                    <span className={`${f.size.date}`} style={dateStyle}>{formatDate(e.startDate)} - {formatDate(e.endDate)}</span>
                   </div>
                 </div>
               ))}
@@ -849,11 +883,11 @@ const SidebarLayout: React.FC<{ data: ResumeData; theme: typeof sidebarTheme; fo
           {/* Awards */}
           {data.awards.length > 0 && (
             <div className="mb-4">
-              <h2 className={`${f.size.sectionTitle} ${f.name} text-[${c.title}] border-b border-orange-200 pb-1 mb-2`}>Awards</h2>
+              <h2 className={`${f.size.sectionTitle} ${f.name} border-b border-orange-200 pb-1 mb-2`} style={titleStyle}>Awards</h2>
               {data.awards.map(a => (
                 <div key={a.id} className="mb-1.5 flex justify-between">
-                  <span className={`${f.size.itemTitle} ${f.name} text-[${c.title}]`}>{a.title}</span>
-                  <span className={`${f.size.date} text-[${c.date}]`}>{a.date}</span>
+                  <span className={`${f.size.itemTitle} ${f.name}`} style={titleStyle}>{a.title}</span>
+                  <span className={`${f.size.date}`} style={dateStyle}>{a.date}</span>
                 </div>
               ))}
             </div>

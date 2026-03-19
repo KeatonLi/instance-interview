@@ -1,17 +1,61 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { resumeApi } from '@/lib/resumes';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { FileText, Sparkles, Eye, Edit, RotateCcw, Save, Loader2, ArrowLeft, Pencil, Palette } from 'lucide-react';
+import {
+  FileText,
+  Sparkles,
+  Eye,
+  Edit,
+  RotateCcw,
+  Save,
+  Loader2,
+  ArrowLeft,
+  Pencil,
+  Check,
+  Palette,
+  PanelLeft,
+  PanelRight,
+  AlertCircle,
+  LayoutTemplate
+} from 'lucide-react';
 import type { ResumeData } from '@/types/resume';
 import { defaultResumeData } from '@/types/resume';
 import { themes } from '@/styles/resumeThemes';
+import { sampleResumeData } from '@/lib/sampleResumeData';
+import { parseResumeData, sanitizeResumeFilename } from '@/lib/resumeData';
 import ResumeForm from '@/components/ResumeForm';
 import ResumePreview from '@/components/ResumePreview';
 import PDFDownloader from '@/components/PDFDownloader';
+
+// 自动保存提示
+const AutoSaveIndicator: React.FC<{ saving: boolean; lastSaved: Date | null }> = ({
+  saving,
+  lastSaved
+}) => {
+  if (saving) {
+    return (
+      <div className="flex items-center gap-2 text-blue-600 text-sm">
+        <Loader2 size={14} className="animate-spin" />
+        <span>保存中...</span>
+      </div>
+    );
+  }
+
+  if (lastSaved) {
+    return (
+      <div className="flex items-center gap-2 text-green-600 text-sm">
+        <Check size={14} />
+        <span>已保存 {lastSaved.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}</span>
+      </div>
+    );
+  }
+
+  return null;
+};
 
 const EditorPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -24,10 +68,13 @@ const EditorPage: React.FC = () => {
   const [themeId, setThemeId] = useState(0);
   const [showThemePicker, setShowThemePicker] = useState(false);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
+  const [showPreviewPanel, setShowPreviewPanel] = useState(true);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [saveError, setSaveError] = useState('');
+  const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (id) {
@@ -35,25 +82,37 @@ const EditorPage: React.FC = () => {
     }
   }, [id]);
 
+  // 自动保存功能
+  useEffect(() => {
+    if (hasChanges && id) {
+      if (autoSaveTimerRef.current) {
+        clearTimeout(autoSaveTimerRef.current);
+      }
+      autoSaveTimerRef.current = setTimeout(() => {
+        handleAutoSave();
+      }, 3000);
+    }
+
+    return () => {
+      if (autoSaveTimerRef.current) {
+        clearTimeout(autoSaveTimerRef.current);
+      }
+    };
+  }, [hasChanges, resumeData, resumeTitle]);
+
   const loadResume = async (resumeId: number) => {
     setLoading(true);
     try {
       const res = await resumeApi.getResume(resumeId);
-      // 解析后端返回的 JSON 字符串字段
       const resume = res.data;
       setResumeTitle(resume.title || '我的简历');
       setThemeId(resume.theme_id || 0);
-      setResumeData({
-        personalInfo: resume.personal_info ? JSON.parse(resume.personal_info) : {},
-        education: resume.education ? JSON.parse(resume.education) : [],
-        workExperience: resume.work_experience ? JSON.parse(resume.work_experience) : [],
-        projects: resume.projects ? JSON.parse(resume.projects) : [],
-        skills: resume.skills ? JSON.parse(resume.skills) : [],
-        awards: resume.awards ? JSON.parse(resume.awards) : [],
-        languages: resume.languages ? JSON.parse(resume.languages) : [],
-      });
+      setResumeData(parseResumeData(resume));
+      setLastSaved(new Date(resume.updated_at || resume.created_at));
+      setSaveError('');
     } catch (error) {
       console.error('Failed to load resume:', error);
+      setSaveError('简历加载失败，请稍后重试。');
     } finally {
       setLoading(false);
     }
@@ -63,6 +122,7 @@ const EditorPage: React.FC = () => {
     if (!user) return;
 
     setSaving(true);
+    setSaveError('');
     try {
       if (id) {
         await resumeApi.updateResume(parseInt(id), {
@@ -81,8 +141,26 @@ const EditorPage: React.FC = () => {
       setLastSaved(new Date());
     } catch (error) {
       console.error('Failed to save resume:', error);
+      setSaveError(error instanceof Error ? error.message : '保存失败，请稍后重试。');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleAutoSave = async () => {
+    if (!user || !id) return;
+
+    try {
+      await resumeApi.updateResume(parseInt(id), {
+        title: resumeTitle,
+        resume_data: resumeData,
+      });
+      setHasChanges(false);
+      setLastSaved(new Date());
+      setSaveError('');
+    } catch (error) {
+      console.error('Auto save failed:', error);
+      setSaveError('自动保存失败，请检查网络后手动保存。');
     }
   };
 
@@ -98,8 +176,11 @@ const EditorPage: React.FC = () => {
         await resumeApi.updateResume(parseInt(id), {
           title: resumeTitle,
         });
+        setLastSaved(new Date());
+        setSaveError('');
       } catch (error) {
         console.error('Failed to update title:', error);
+        setSaveError('标题更新失败，请稍后重试。');
       }
     }
   };
@@ -123,128 +204,47 @@ const EditorPage: React.FC = () => {
   }, [id]);
 
   const loadSampleData = () => {
-    setResumeData({
-      personalInfo: {
-        name: '张明远',
-        title: '全栈开发工程师',
-        email: 'zhangmingyuan@email.com',
-        phone: '138-1234-5678',
-        location: '上海市浦东新区',
-        linkedin: 'linkedin.com/in/zhangmingyuan',
-        github: 'github.com/zhangmingyuan',
-        website: 'zhangmingyuan.dev',
-        summary: '拥有5年软件开发经验的全栈工程师，专注于现代Web技术栈。擅长React、Node.js和云原生开发，在多个大型项目中担任技术负责人。热爱开源社区，积极参与技术分享和代码审查。'
-      },
-      education: [
-        {
-          id: '1',
-          school: '上海交通大学',
-          degree: '硕士',
-          field: '计算机科学与技术',
-          startDate: '2016-09',
-          endDate: '2019-06',
-          gpa: '3.9/4.0',
-          description: '专注于分布式系统和云计算研究，发表SCI论文2篇'
-        },
-        {
-          id: '2',
-          school: '浙江大学',
-          degree: '本科',
-          field: '软件工程',
-          startDate: '2012-09',
-          endDate: '2016-06',
-          gpa: '3.7/4.0',
-          description: '获国家奖学金，ACM程序设计竞赛省级一等奖'
-        }
-      ],
-      workExperience: [
-        {
-          id: '1',
-          company: '字节跳动',
-          position: '高级前端工程师',
-          startDate: '2021-03',
-          endDate: '',
-          current: true,
-          description: '负责抖音电商后台管理系统的前端架构设计和开发工作',
-          achievements: [
-            '主导微前端架构改造，将单体应用拆分为5个独立模块，构建时间减少70%',
-            '设计并实现组件库，被10+团队复用，提升开发效率40%',
-            '优化首屏加载性能，LCP从3.2s降低至1.5s'
-          ]
-        },
-        {
-          id: '2',
-          company: '阿里巴巴',
-          position: '前端开发工程师',
-          startDate: '2019-07',
-          endDate: '2021-02',
-          current: false,
-          description: '参与淘宝商家后台系统的开发和维护',
-          achievements: [
-            '负责订单管理模块重构，代码可维护性提升50%',
-            '实现自动化测试覆盖率从30%提升至85%',
-            '指导3名初级工程师，参与技术面试和团队建设'
-          ]
-        }
-      ],
-      projects: [
-        {
-          id: '1',
-          name: '智能代码审查平台',
-          role: '项目负责人',
-          startDate: '2023-01',
-          endDate: '2023-08',
-          current: false,
-          description: '基于AI的代码审查工具，集成多种代码质量检测规则，支持自动化CR流程',
-          technologies: ['React', 'TypeScript', 'Node.js', 'PostgreSQL', 'Docker'],
-          link: 'github.com/zhangmingyuan/code-review-platform'
-        }
-      ],
-      skills: [
-        { id: '1', category: '编程语言', items: ['JavaScript', 'TypeScript', 'Python', 'Go', 'SQL'] },
-        { id: '2', category: '前端框架', items: ['React', 'Vue', 'Next.js', 'Webpack', 'Vite'] },
-        { id: '3', category: '后端技术', items: ['Node.js', 'Express', 'Django', 'GraphQL', 'Redis'] },
-        { id: '4', category: '云与DevOps', items: ['AWS', 'Docker', 'Kubernetes', 'CI/CD', 'Terraform'] }
-      ],
-      awards: [
-        { id: '1', title: '年度最佳员工', organization: '字节跳动', date: '2023-12', description: '因在技术架构改进和团队建设方面的突出贡献获奖' },
-        { id: '2', title: '技术创新奖', organization: '阿里巴巴', date: '2020-09', description: '开发的前端性能监控工具被全集团推广使用' }
-      ],
-      languages: [
-        { id: '1', name: '中文', level: '母语' },
-        { id: '2', name: '英语', level: '流利' },
-        { id: '3', name: '日语', level: '基础' }
-      ]
-    });
+    setResumeData(sampleResumeData);
     setHasChanges(true);
   };
 
   const resetData = () => {
-    setResumeData(defaultResumeData);
-    setHasChanges(true);
+    if (confirm('确定要清空所有内容吗？此操作不可撤销。')) {
+      setResumeData(defaultResumeData);
+      setHasChanges(true);
+    }
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+      <div className="min-h-screen bg-gradient-to-br from-blue-50/30 to-white flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="w-10 h-10 animate-spin text-blue-600" />
+          <p className="text-slate-500 text-sm">加载简历中...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="bg-white/80 backdrop-blur-md shadow-sm border-b border-slate-200 sticky top-0 z-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50/20 via-white to-blue-50/30">
+      {/* Header */}
+      <header className="bg-white/90 backdrop-blur-md shadow-sm border-b border-blue-100 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-3">
-              <Button variant="ghost" size="sm" onClick={() => navigate('/resumes')}>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate('/resumes')}
+                className="text-slate-600 hover:text-blue-600 hover:bg-blue-50"
+              >
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 返回
               </Button>
-              <div className="h-6 w-px bg-slate-300" />
+              <div className="h-6 w-px bg-blue-200" />
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center">
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-blue-sm">
                   <FileText className="w-5 h-5 text-white" />
                 </div>
                 {isEditingTitle ? (
@@ -254,11 +254,11 @@ const EditorPage: React.FC = () => {
                     onBlur={handleTitleBlur}
                     onKeyDown={(e) => e.key === 'Enter' && handleTitleBlur()}
                     autoFocus
-                    className="h-8 w-48"
+                    className="h-8 w-48 border-blue-200 focus:border-blue-400"
                   />
                 ) : (
                   <div
-                    className="flex items-center space-x-2 cursor-pointer hover:bg-slate-100 rounded px-2 py-1"
+                    className="flex items-center space-x-2 cursor-pointer hover:bg-blue-50 rounded-lg px-2 py-1 transition-colors"
                     onClick={() => setIsEditingTitle(true)}
                   >
                     <h1 className="text-xl font-bold text-slate-800">{resumeTitle}</h1>
@@ -267,15 +267,17 @@ const EditorPage: React.FC = () => {
                 )}
               </div>
             </div>
-            <div className="flex items-center space-x-2">
-              <span className="text-sm text-slate-500">
-                {hasChanges ? '未保存' : lastSaved ? `已保存 ${lastSaved.toLocaleTimeString('zh-CN')}` : ''}
-              </span>
+
+            <div className="flex items-center space-x-3">
+              <AutoSaveIndicator saving={saving} lastSaved={lastSaved} />
+
+              <div className="h-6 w-px bg-blue-200 hidden sm:block" />
+
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={loadSampleData}
-                className="hidden sm:flex text-slate-600"
+                className="hidden md:flex text-slate-600 hover:text-blue-600 hover:bg-blue-50"
               >
                 <Sparkles size={14} className="mr-2" />
                 示例
@@ -284,36 +286,44 @@ const EditorPage: React.FC = () => {
                 variant="ghost"
                 size="sm"
                 onClick={resetData}
-                className="hidden sm:flex text-slate-600"
+                className="hidden md:flex text-slate-600 hover:text-red-600 hover:bg-red-50"
               >
                 <RotateCcw size={14} className="mr-2" />
                 重置
               </Button>
+
               <Button
-                variant="ghost"
+                variant="default"
                 size="sm"
                 onClick={handleSave}
                 disabled={saving}
-                className="text-blue-600 hover:text-blue-700"
+                className="bg-blue-600 hover:bg-blue-700 shadow-blue-sm"
               >
-                {saving ? <Loader2 size={14} className="mr-2 animate-spin" /> : <Save size={14} className="mr-2" />}
+                {saving ? (
+                  <Loader2 size={14} className="mr-2 animate-spin" />
+                ) : (
+                  <Save size={14} className="mr-2" />
+                )}
                 保存
               </Button>
-              <div className="h-6 w-px bg-slate-300 hidden sm:block" />
+
+              <div className="h-6 w-px bg-blue-200 hidden lg:block" />
+
+              {/* 预览切换按钮 - 仅在小屏幕显示 */}
               <Button
-                variant={isPreviewMode ? 'default' : 'outline'}
+                variant="outline"
                 size="sm"
                 onClick={() => setIsPreviewMode(!isPreviewMode)}
-                className="gap-2 shadow-sm"
+                className="lg:hidden border-blue-200 text-blue-600 hover:bg-blue-50"
               >
                 {isPreviewMode ? (
                   <>
-                    <Edit size={14} />
+                    <Edit size={14} className="mr-2" />
                     编辑
                   </>
                 ) : (
                   <>
-                    <Eye size={14} />
+                    <Eye size={14} className="mr-2" />
                     预览
                   </>
                 )}
@@ -324,10 +334,56 @@ const EditorPage: React.FC = () => {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <section className="mb-6 rounded-3xl border border-blue-100 bg-white/85 backdrop-blur-sm shadow-sm p-5">
+          <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+            <div className="space-y-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700 border border-blue-100">
+                  <LayoutTemplate className="w-3.5 h-3.5 mr-1.5" />
+                  当前模板：{themes[themeId]?.name || '默认模板'}
+                </span>
+                <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium border ${
+                  hasChanges
+                    ? 'bg-amber-50 text-amber-700 border-amber-200'
+                    : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                }`}>
+                  {hasChanges ? '有未保存更改' : '内容已同步'}
+                </span>
+              </div>
+              <p className="text-sm text-slate-500">
+                左侧专注编辑内容，右侧保持最终排版预览。切换模板和导出都在当前页面直接完成。
+              </p>
+              {saveError && (
+                <div className="inline-flex items-start gap-2 rounded-2xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
+                  <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                  <span>{saveError}</span>
+                </div>
+              )}
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-3 xl:min-w-[320px]">
+              <Button
+                variant="outline"
+                onClick={loadSampleData}
+                className="border-blue-200 hover:bg-blue-50"
+              >
+                <Sparkles size={16} className="mr-2 text-blue-500" />
+                加载示例
+              </Button>
+              <PDFDownloader
+                resumeData={resumeData}
+                filename={sanitizeResumeFilename(resumeTitle || resumeData.personalInfo.name || 'resume')}
+              />
+            </div>
+          </div>
+        </section>
+
         {isPreviewMode ? (
-          <div className="flex flex-col items-center space-y-6">
+          // 移动端预览模式
+          <div className="flex flex-col items-center space-y-6 animate-fade-in">
             {/* 模板切换 */}
-            <div className="flex gap-2 p-2 bg-white rounded-lg shadow-sm">
+            <div className="w-full overflow-x-auto rounded-2xl border border-blue-100 bg-white p-2 shadow-sm">
+              <div className="flex gap-2 min-w-max">
               {themes.map((theme, index) => (
                 <button
                   key={index}
@@ -341,21 +397,44 @@ const EditorPage: React.FC = () => {
                   {theme.name}
                 </button>
               ))}
+              </div>
             </div>
             <div className="w-full max-w-md">
-              <PDFDownloader resumeData={resumeData} filename={`${resumeData.personalInfo.name || 'resume'}`} />
+              <PDFDownloader
+                resumeData={resumeData}
+                filename={sanitizeResumeFilename(resumeTitle || resumeData.personalInfo.name || 'resume')}
+              />
             </div>
             <div className="w-full flex justify-center">
               <ResumePreview data={resumeData} themeId={themeId} />
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-            <div className="order-2 xl:order-1">
-              <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                <div className="bg-gradient-to-r from-slate-50 to-slate-100/50 px-6 py-4 border-b border-slate-200">
+          // 编辑模式
+          <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1.08fr)_minmax(420px,0.92fr)] gap-6 items-start">
+            {/* 编辑区域 */}
+            <div className={`order-2 xl:order-1 ${showPreviewPanel ? 'xl:block' : 'xl:col-span-2'}`}>
+              <div className="bg-white rounded-2xl shadow-sm border border-blue-100 overflow-hidden">
+                <div className="px-6 pt-5">
+                  <div className="flex items-center gap-2 overflow-x-auto pb-3">
+                    {themes.map((theme, index) => (
+                      <button
+                        key={index}
+                        onClick={() => handleThemeChange(index)}
+                        className={`whitespace-nowrap rounded-full border px-3 py-1.5 text-sm font-medium transition-all ${
+                          themeId === index
+                            ? 'border-blue-500 bg-blue-50 text-blue-700'
+                            : 'border-slate-200 bg-white text-slate-500 hover:border-blue-200 hover:text-blue-600'
+                        }`}
+                      >
+                        {theme.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="bg-gradient-to-r from-blue-50 to-blue-50/50 px-6 py-4 border-b border-blue-100">
                   <h2 className="font-semibold text-slate-800 flex items-center gap-2">
-                    <Edit size={18} className="text-slate-500" />
+                    <Edit size={18} className="text-blue-500" />
                     编辑简历
                   </h2>
                   <p className="text-sm text-slate-500 mt-1">填写以下信息，右侧将实时预览</p>
@@ -366,8 +445,9 @@ const EditorPage: React.FC = () => {
               </div>
             </div>
 
-            <div className="order-1 xl:order-2 xl:sticky xl:top-20 xl:h-fit space-y-4">
-              <Card className="bg-white/90 backdrop-blur-sm border-slate-200 shadow-sm">
+            {/* 预览区域 - 大屏幕显示 */}
+            <div className={`order-1 xl:order-2 xl:sticky xl:top-20 xl:h-fit space-y-4 hidden xl:block ${!showPreviewPanel && 'xl:hidden'}`}>
+              <Card className="bg-white/90 backdrop-blur-sm border-blue-100 shadow-sm rounded-2xl">
                 <CardHeader className="pb-4">
                   <div className="flex items-center justify-between">
                     <div>
@@ -379,15 +459,29 @@ const EditorPage: React.FC = () => {
                     </div>
                     <div className="flex items-center gap-2">
                       <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setShowPreviewPanel(!showPreviewPanel)}
+                        className="text-slate-400 hover:text-slate-600"
+                        title={showPreviewPanel ? "隐藏预览" : "显示预览"}
+                      >
+                        {showPreviewPanel ? <PanelRight size={18} /> : <PanelLeft size={18} />}
+                      </Button>
+                      <div className="flex items-center gap-2">
+                      <Button
                         variant="outline"
                         size="sm"
                         onClick={() => setShowThemePicker(!showThemePicker)}
-                        className="flex items-center gap-1"
+                        className="flex items-center gap-1 border-blue-200 hover:bg-blue-50"
                       >
                         <Palette size={14} />
                         模板
                       </Button>
-                      <PDFDownloader resumeData={resumeData} filename={`${resumeData.personalInfo.name || 'resume'}`} />
+                        <PDFDownloader
+                          resumeData={resumeData}
+                          filename={sanitizeResumeFilename(resumeTitle || resumeData.personalInfo.name || 'resume')}
+                        />
+                      </div>
                     </div>
                   </div>
                 </CardHeader>
@@ -415,10 +509,35 @@ const EditorPage: React.FC = () => {
                   </CardContent>
                 )}
               </Card>
-              <div>
+              <div className="transform transition-all duration-300 rounded-2xl border border-blue-100 bg-white/60 backdrop-blur-sm p-3">
                 <ResumePreview data={resumeData} themeId={themeId} />
               </div>
             </div>
+
+            {/* 当预览面板隐藏时的浮动按钮 */}
+            {showPreviewPanel && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowPreviewPanel(false)}
+                className="fixed bottom-6 right-6 shadow-lg border-blue-200 bg-white/90 backdrop-blur-sm hidden xl:flex"
+              >
+                <PanelRight size={16} className="mr-2" />
+                隐藏预览
+              </Button>
+            )}
+
+            {!showPreviewPanel && (
+              <Button
+                variant="default"
+                size="sm"
+                onClick={() => setShowPreviewPanel(true)}
+                className="fixed bottom-6 right-6 shadow-lg shadow-blue-500/30 bg-blue-600 hidden xl:flex"
+              >
+                <PanelLeft size={16} className="mr-2" />
+                显示预览
+              </Button>
+            )}
           </div>
         )}
       </main>
