@@ -23,25 +23,49 @@ type ParsedResume struct {
 }
 
 // ParsePDF 解析 PDF 文件并提取简历信息
-func ParsePDF(file io.Reader) (*ParsedResume, error) {
+func ParsePDF(file io.Reader) (result *ParsedResume, parseErr error) {
+	// 使用 defer recover 捕获所有可能的 panic
+	defer func() {
+		if r := recover(); r != nil {
+			parseErr = fmt.Errorf("PDF 解析 panic: %v", r)
+			result = nil
+		}
+	}()
+
 	// 读取 PDF 内容
 	buf := new(bytes.Buffer)
 	if _, err := buf.ReadFrom(file); err != nil {
 		return nil, fmt.Errorf("读取文件失败: %w", err)
 	}
-	
+
+	// 检查文件是否为空
+	if buf.Len() == 0 {
+		return nil, fmt.Errorf("文件内容为空")
+	}
+
+	// 检查是否看起来像 PDF（PDF 文件以 %PDF- 开头）
+	pdfBytes := buf.Bytes()
+	if len(pdfBytes) < 4 || string(pdfBytes[:4]) != "%PDF" {
+		return nil, fmt.Errorf("文件不是有效的 PDF 格式")
+	}
+
 	// 使用 ledongthuc/pdf 解析 PDF
-	pdfReader, err := pdf.NewReader(bytes.NewReader(buf.Bytes()), int64(buf.Len()))
+	pdfReader, err := pdf.NewReader(bytes.NewReader(pdfBytes), int64(buf.Len()))
 	if err != nil {
 		return nil, fmt.Errorf("解析 PDF 失败: %w", err)
 	}
-	
+
 	var fullText strings.Builder
-	
+
 	// 遍历所有页面提取文本
-	for pageNum := 1; pageNum <= pdfReader.NumPage(); pageNum++ {
+	numPages := pdfReader.NumPage()
+	if numPages == 0 {
+		return nil, fmt.Errorf("PDF 中没有页面")
+	}
+
+	for pageNum := 1; pageNum <= numPages; pageNum++ {
 		page := pdfReader.Page(pageNum)
-		
+
 		// 获取页面文本
 		text, err := page.GetPlainText(nil)
 		if err != nil {
@@ -50,16 +74,16 @@ func ParsePDF(file io.Reader) (*ParsedResume, error) {
 		fullText.WriteString(text)
 		fullText.WriteString("\n")
 	}
-	
+
 	rawText := fullText.String()
 	if rawText == "" {
-		return nil, fmt.Errorf("无法从 PDF 中提取文本")
+		return nil, fmt.Errorf("无法从 PDF 中提取文本内容")
 	}
-	
+
 	// 解析简历结构
 	parsed := parseResumeStructure(rawText)
 	parsed.RawText = rawText
-	
+
 	return parsed, nil
 }
 
@@ -97,13 +121,14 @@ func parseResumeStructure(text string) *ParsedResume {
 
 // cleanText 清理文本
 func cleanText(text string) string {
-	// 移除多余空白
-	re := regexp.MustCompile(`\s+`)
+	// 移除多余空白（换行、制表符等替换为空格）
+	re := regexp.MustCompile(`[[:space:]]+`)
 	text = re.ReplaceAllString(text, " ")
-	
-	// 移除特殊字符但保留基本标点
-	text = regexp.MustCompile(`[^\w\s\-\.@/:，。、；：""''（）《》【】]`).ReplaceAllString(text, " ")
-	
+
+	// 移除特殊字符但保留基本标点和中文标点
+	re2 := regexp.MustCompile(`[^\w\s\-,.@/:，。、；：""''（）《》【】]`)
+	text = re2.ReplaceAllString(text, " ")
+
 	return strings.TrimSpace(text)
 }
 
@@ -193,7 +218,7 @@ func extractPersonalInfo(lines []string, fullText string) map[string]interface{}
 // isLikelyName 判断是否可能是姓名
 func isLikelyName(s string) bool {
 	// 中文姓名通常是 2-4 个汉字
-	if regexp.MustCompile(`^[\u4e00-\u9fa5]{2,4}$`).MatchString(s) {
+	if regexp.MustCompile(`^[\x{4e00}-\x{9fa5}]{2,4}$`).MatchString(s) {
 		return true
 	}
 	// 英文姓名
@@ -206,19 +231,30 @@ func isLikelyName(s string) bool {
 // extractEducation 提取教育经历
 func extractEducation(text string) []map[string]interface{} {
 	var education []map[string]interface{}
-	
-	eduPattern := regexp.MustCompile(`(?i)(?:教育|学历|Education|Academic)[\s\S]*?(?=工作|Work|Experience|项目|Project|技能|Skills|$)`)
-	
-	if match := eduPattern.FindString(text); match != "" {
+
+	// 查找教育相关内容（不使用 lookahead）
+	// 匹配从"教育"到"工作/项目/技能"之前的内容
+	eduPattern := regexp.MustCompile(`(?i)(?:教育|学历|Education|Academic)[\s\S]*?`)
+	endPattern := regexp.MustCompile(`(?i)(?:工作|经验|Experience|Work|项目|Project|技能|Skills)`)
+
+	if match := eduPattern.FindStringIndex(text); len(match) > 0 {
+		start := match[0]
+		end := len(text)
+		// 找到工作/项目/技能等关键词的位置
+		if endMatch := endPattern.FindStringIndex(text[start:]); len(endMatch) > 0 {
+			end = start + endMatch[0]
+		}
+		matchStr := text[start:end]
+
 		// 提取学校
-		schoolRe := regexp.MustCompile(`([\u4e00-\u9fa5]{2,}(?:大学|学院|学校)|[A-Za-z\s]+(?:University|College|Institute|School))`)
-		schools := schoolRe.FindAllString(match, -1)
-		
+		schoolRe := regexp.MustCompile(`([\x{4e00}-\x{9fa5}]{2,}(?:大学|学院|学校)|[A-Za-z\s]+(?:University|College|Institute|School))`)
+		schools := schoolRe.FindAllString(matchStr, -1)
+
 		for _, school := range schools {
 			edu := map[string]interface{}{
 				"id":        generateID(),
 				"school":    strings.TrimSpace(school),
-				"degree":    extractDegree(match),
+				"degree":    extractDegree(matchStr),
 				"field":     "",
 				"startDate": "",
 				"endDate":   "",
@@ -227,12 +263,12 @@ func extractEducation(text string) []map[string]interface{} {
 			education = append(education, edu)
 		}
 	}
-	
+
 	// 如果没有找到，尝试用通用模式
 	if len(education) == 0 {
-		uniRe := regexp.MustCompile(`([\u4e00-\u9fa5]{2,}(?:大学|学院))`)
+		uniRe := regexp.MustCompile(`([\x{4e00}-\x{9fa5}]{2,}(?:大学|学院))`)
 		universities := uniRe.FindAllString(text, -1)
-		
+
 		for _, uni := range universities {
 			// 去重
 			found := false
@@ -254,7 +290,7 @@ func extractEducation(text string) []map[string]interface{} {
 			}
 		}
 	}
-	
+
 	return education
 }
 
@@ -272,15 +308,23 @@ func extractDegree(text string) string {
 // extractWorkExperience 提取工作经历
 func extractWorkExperience(text string) []map[string]interface{} {
 	var experiences []map[string]interface{}
-	
-	// 工作关键词
-	workPattern := regexp.MustCompile(`(?i)(?:工作|经验|Experience|Work)[\s\S]*?(?=项目|Project|教育|Education|技能|Skills|$)`)
-	
-	if match := workPattern.FindString(text); match != "" {
+
+	// 工作关键词（不使用 lookahead）
+	workPattern := regexp.MustCompile(`(?i)(?:工作|经验|Experience|Work)[\s\S]*?`)
+	endPattern := regexp.MustCompile(`(?i)(?:项目|Project|教育|Education|技能|Skills)`)
+
+	if match := workPattern.FindStringIndex(text); len(match) > 0 {
+		start := match[0]
+		end := len(text)
+		if endMatch := endPattern.FindStringIndex(text[start:]); len(endMatch) > 0 {
+			end = start + endMatch[0]
+		}
+		matchStr := text[start:end]
+
 		// 提取公司名
-		companyRe := regexp.MustCompile(`([\u4e00-\u9fa5]{2,}(?:公司|集团|科技)|[A-Za-z\s]+(?:Inc|Corp|Ltd|Company|Co\.))`)
-		companies := companyRe.FindAllString(match, -1)
-		
+		companyRe := regexp.MustCompile(`([\x{4e00}-\x{9fa5}]{2,}(?:公司|集团|科技)|[A-Za-z\s]+(?:Inc|Corp|Ltd|Company|Co\.))`)
+		companies := companyRe.FindAllString(matchStr, -1)
+
 		for _, company := range companies {
 			exp := map[string]interface{}{
 				"id":           generateID(),
@@ -295,22 +339,30 @@ func extractWorkExperience(text string) []map[string]interface{} {
 			experiences = append(experiences, exp)
 		}
 	}
-	
+
 	return experiences
 }
 
 // extractProjects 提取项目经验
 func extractProjects(text string) []map[string]interface{} {
 	var projects []map[string]interface{}
-	
-	// 项目关键词
-	projPattern := regexp.MustCompile(`(?i)(?:项目|Project)[\s\S]*?(?=技能|Skills|工作|Experience|教育|Education|$)`)
-	
-	if match := projPattern.FindString(text); match != "" {
+
+	// 项目关键词（不使用 lookahead）
+	projPattern := regexp.MustCompile(`(?i)(?:项目|Project)[\s\S]*?`)
+	endPattern := regexp.MustCompile(`(?i)(?:技能|Skills|工作|Experience|教育|Education)`)
+
+	if match := projPattern.FindStringIndex(text); len(match) > 0 {
+		start := match[0]
+		end := len(text)
+		if endMatch := endPattern.FindStringIndex(text[start:]); len(endMatch) > 0 {
+			end = start + endMatch[0]
+		}
+		matchStr := text[start:end]
+
 		// 简单提取项目名称（基于数字列表）
 		projRe := regexp.MustCompile(`(?:\d+[\.、]|\-|\*)\s*([^\n]{2,30})`)
-		matches := projRe.FindAllStringSubmatch(match, -1)
-		
+		matches := projRe.FindAllStringSubmatch(matchStr, -1)
+
 		for _, m := range matches {
 			if len(m) > 1 {
 				proj := map[string]interface{}{

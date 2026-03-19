@@ -291,7 +291,7 @@ func ImportResume(c *gin.Context) {
 		return
 	}
 
-	// 获取上传的文件
+	// 获取上传的文件（不先解析 multipart form）
 	file, header, err := c.Request.FormFile("file")
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "请上传文件"})
@@ -299,15 +299,15 @@ func ImportResume(c *gin.Context) {
 	}
 	defer file.Close()
 
-	// 检查文件后缀
-	if !strings.HasSuffix(strings.ToLower(header.Filename), ".pdf") {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "请上传 PDF 格式的文件"})
-		return
-	}
-
 	// 检查文件大小 (最大 10MB)
 	if header.Size > 10*1024*1024 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "文件大小不能超过 10MB"})
+		return
+	}
+
+	// 检查文件后缀
+	if !strings.HasSuffix(strings.ToLower(header.Filename), ".pdf") {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "请上传 PDF 格式的文件"})
 		return
 	}
 
