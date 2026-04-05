@@ -5,17 +5,18 @@ import { resumeApi } from '@/lib/resumes';
 import type { Resume } from '@/lib/resumes';
 import type { ResumeData } from '@/types/resume';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import {
-  CalendarDays,
+  Clock,
+  Copy,
   Edit,
   Eye,
   FileText,
   FileUp,
   Layers3,
   Loader2,
-  MoreVertical,
+  MoreHorizontal,
   Plus,
+  Sparkles,
   Trash2,
   Upload,
 } from 'lucide-react';
@@ -29,7 +30,6 @@ import {
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
@@ -39,9 +39,17 @@ import PDFDownloader from '@/components/PDFDownloader';
 import { parseResumeData, sanitizeResumeFilename } from '@/lib/resumeData';
 import { themes } from '@/styles/resumeThemes';
 
-const ResumeCardPreview: React.FC<{ resume: Resume }> = ({ resume }) => {
+// 简历卡片 - 简历本身即是卡片
+const ResumeCard: React.FC<{
+  resume: Resume;
+  onPreview: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+  onDuplicate?: () => void;
+}> = ({ resume, onPreview, onEdit, onDelete, onDuplicate }) => {
   const [previewData, setPreviewData] = useState<ResumeData | null>(null);
   const [loading, setLoading] = useState(true);
+  const cardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const loadPreview = async () => {
@@ -54,39 +62,159 @@ const ResumeCardPreview: React.FC<{ resume: Resume }> = ({ resume }) => {
         setLoading(false);
       }
     };
-
     loadPreview();
   }, [resume.id]);
 
-  if (loading) {
-    return (
-      <div className="h-48 rounded-2xl bg-blue-50/70 flex items-center justify-center">
-        <Loader2 className="animate-spin text-blue-300" size={24} />
-      </div>
-    );
-  }
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diff = now.getTime() - date.getTime();
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    if (days === 0) return '今天';
+    if (days === 1) return '昨天';
+    if (days < 7) return `${days}天前`;
+    if (days < 30) return `${Math.floor(days / 7)}周前`;
+    return date.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' });
+  };
 
-  if (!previewData) {
-    return (
-      <div className="h-48 rounded-2xl bg-blue-50/70 flex items-center justify-center text-slate-400 text-sm">
-        加载预览失败
-      </div>
-    );
-  }
+  const theme = themes[resume.theme_id] || themes[0];
 
   return (
-    <div className="h-48 bg-white rounded-2xl overflow-hidden border border-blue-100 relative cursor-pointer group/preview shadow-sm">
+    <div className="group relative">
+      {/* 简历本身即是卡片 - 没有额外边框 */}
       <div
-        className="origin-top-left scale-[0.28] w-[calc(100%/0.28)]"
-        style={{ height: 'calc(100% / 0.28)' }}
+        ref={cardRef}
+        className="relative bg-white cursor-pointer transition-all duration-300 hover:shadow-2xl hover:shadow-black/15 hover:-translate-y-1 overflow-hidden rounded"
+        onClick={onPreview}
       >
-        <ResumePreview data={previewData} themeId={resume.theme_id} />
+        {loading ? (
+          <div className="absolute inset-0 flex items-center justify-center bg-slate-50">
+            <Loader2 className="animate-spin text-slate-300" size={24} />
+          </div>
+        ) : previewData ? (
+          <>
+            <div
+              className="w-full overflow-hidden"
+              style={{ height: '280px' }}
+            >
+              <div className="w-full h-full flex items-center justify-center">
+                <ResumePreview data={previewData} themeId={resume.theme_id} scale={0.32} />
+              </div>
+            </div>
+
+            {/* 悬停时显示的遮罩和操作 */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+              <div className="absolute bottom-0 left-0 right-0 p-3 flex items-center justify-center gap-2 bg-gradient-to-t from-black/30 to-transparent">
+                <button
+                  onClick={(e) => { e.stopPropagation(); onPreview(); }}
+                  className="px-3 py-1.5 bg-white/95 backdrop-blur-sm rounded-lg text-xs font-medium text-slate-700 shadow-lg hover:bg-white transition-colors flex items-center gap-1.5"
+                >
+                  <Eye className="w-3.5 h-3.5" /> 预览
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); onEdit(); }}
+                  className="px-3 py-1.5 bg-white/95 backdrop-blur-sm rounded-lg text-xs font-medium text-slate-700 shadow-lg hover:bg-white transition-colors flex items-center gap-1.5"
+                >
+                  <Edit className="w-3.5 h-3.5" /> 编辑
+                </button>
+              </div>
+            </div>
+          </>
+        ) : (
+          <div className="w-full flex flex-col items-center justify-center bg-slate-100 text-slate-400" style={{ height: '280px' }}>
+            <FileText className="w-8 h-8 mb-2 opacity-50" />
+            <span className="text-xs">加载失败</span>
+          </div>
+        )}
+
+        {/* 左下角模板标签 */}
+        <div className="absolute top-2 left-2">
+          <span className="px-2 py-0.5 bg-white/90 backdrop-blur-sm rounded text-[10px] font-medium text-slate-600 shadow-sm">
+            {theme.name}
+          </span>
+        </div>
       </div>
-      <div className="absolute inset-0 bg-gradient-to-t from-blue-950/10 via-transparent to-transparent opacity-0 group-hover/preview:opacity-100 transition-opacity duration-300" />
+
+      {/* 简历信息 - 卡片底部 */}
+      <div className="pt-2.5 pb-1">
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0 flex-1">
+            <h3 className="text-sm font-semibold text-slate-800 truncate group-hover:text-blue-600 transition-colors">
+              {resume.title}
+            </h3>
+            <div className="flex items-center gap-2 text-[10px] text-slate-400 mt-0.5">
+              <span className="flex items-center gap-1">
+                <Clock className="w-3 h-3" />
+                {formatDate(resume.updated_at || resume.created_at)}
+              </span>
+            </div>
+          </div>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-7 w-7 text-slate-400 hover:text-slate-600 hover:bg-slate-100 flex-shrink-0 -mr-1">
+                <MoreHorizontal size={14} />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-36">
+              <DropdownMenuItem onClick={onPreview}>
+                <Eye className="w-3.5 h-3.5 mr-2 text-slate-500" />
+                预览
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={onEdit}>
+                <Edit className="w-3.5 h-3.5 mr-2 text-slate-500" />
+                编辑
+              </DropdownMenuItem>
+              {onDuplicate && (
+                <DropdownMenuItem onClick={onDuplicate}>
+                  <Copy className="w-3.5 h-3.5 mr-2 text-slate-500" />
+                  复制
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={onDelete} className="text-red-600 focus:text-red-600">
+                <Trash2 className="w-3.5 h-3.5 mr-2" />
+                删除
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+
+        {/* 底部操作栏 */}
+        <div className="flex items-center gap-1 mt-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={(e) => { e.stopPropagation(); onPreview(); }}
+            className="h-7 px-2 text-xs text-slate-500 hover:text-blue-600 hover:bg-blue-50 flex-1"
+          >
+            <Eye className="w-3.5 h-3.5 mr-1" />
+            预览
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={(e) => { e.stopPropagation(); onEdit(); }}
+            className="h-7 px-2 text-xs text-slate-500 hover:text-blue-600 hover:bg-blue-50 flex-1"
+          >
+            <Edit className="w-3.5 h-3.5 mr-1" />
+            编辑
+          </Button>
+          <PDFDownloader
+            filename={sanitizeResumeFilename(resume.title)}
+            loadResumeData={async () => {
+              const res = await resumeApi.getResume(resume.id);
+              return parseResumeData(res.data);
+            }}
+            className="h-7 px-2 text-xs flex-1"
+          />
+        </div>
+      </div>
     </div>
   );
 };
 
+// 导入对话框
 const ImportResumeDialog: React.FC<{
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -98,49 +226,19 @@ const ImportResumeDialog: React.FC<{
   const fileInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
-  };
-
-  const handleDragLeave = () => {
-    setIsDragging(false);
-  };
-
-  const handleDrop = async (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    const files = e.dataTransfer.files;
-
-    if (files.length > 0) {
-      await handleFileUpload(files[0]);
-    }
-  };
-
-  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      await handleFileUpload(file);
-    }
-  };
-
   const handleFileUpload = async (file: File) => {
     setError(null);
-
     if (!file.name.toLowerCase().endsWith('.pdf')) {
       setError('请上传 PDF 格式的简历文件');
       return;
     }
-
     if (file.size > 10 * 1024 * 1024) {
       setError('文件大小不能超过 10MB');
       return;
     }
-
     setUploading(true);
     try {
       const result = await resumeApi.importResume(file);
-
       if (result.code === 0 && result.data?.resume?.id) {
         onImport();
         onOpenChange(false);
@@ -160,53 +258,69 @@ const ImportResumeDialog: React.FC<{
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Upload className="w-5 h-5 text-blue-600" />
-            导入简历
+          <DialogTitle className="flex items-center gap-2.5">
+            <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
+              <FileUp className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <span className="block">导入简历</span>
+              <span className="text-xs font-normal text-slate-500">从 PDF 自动解析</span>
+            </div>
           </DialogTitle>
-          <DialogDescription>
-            上传 PDF 格式的简历文件，系统将自动解析并导入。
-          </DialogDescription>
         </DialogHeader>
 
         <div
           onClick={() => !uploading && fileInputRef.current?.click()}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
+          onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+          onDragLeave={() => setIsDragging(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            setIsDragging(false);
+            const files = e.dataTransfer.files;
+            if (files.length > 0) handleFileUpload(files[0]);
+          }}
           className={`
             mt-4 border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-all duration-300
-            ${uploading ? 'cursor-not-allowed opacity-70' : ''}
-            ${isDragging ? 'border-blue-500 bg-blue-50 scale-[1.02]' : 'border-blue-200 hover:border-blue-400 hover:bg-blue-50/60'}
+            ${uploading ? 'cursor-not-allowed opacity-60' : ''}
+            ${isDragging
+              ? 'border-blue-500 bg-blue-500/5 shadow-lg shadow-blue-500/10'
+              : 'border-slate-200 hover:border-blue-300 hover:bg-slate-50'
+            }
           `}
         >
           <input
             ref={fileInputRef}
             type="file"
             accept=".pdf"
-            onChange={handleFileSelect}
+            onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0])}
             className="hidden"
             disabled={uploading}
           />
 
           {uploading ? (
             <div className="flex flex-col items-center gap-3">
-              <Loader2 className="w-10 h-10 animate-spin text-blue-600" />
-              <p className="text-sm text-slate-600">正在解析简历...</p>
+              <Loader2 className="w-10 h-10 animate-spin text-blue-500" />
+              <div>
+                <p className="text-sm font-medium text-slate-700">正在解析简历...</p>
+                <p className="text-xs text-slate-400 mt-1">AI 正在提取信息</p>
+              </div>
             </div>
           ) : (
-            <>
-              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <FileUp className="w-8 h-8 text-blue-600" />
+            <div className="flex flex-col items-center gap-3">
+              <div className="w-14 h-14 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl flex items-center justify-center border border-blue-100">
+                <FileUp className="w-7 h-7 text-blue-500" />
               </div>
-              <p className="text-sm font-medium text-slate-700 mb-1">点击或拖拽上传 PDF 文件</p>
-              <p className="text-xs text-slate-400">支持自动解析个人信息、工作经历等内容</p>
-            </>
+              <div>
+                <p className="text-sm font-semibold text-slate-700 mb-1">点击或拖拽上传 PDF</p>
+                <p className="text-xs text-slate-400">支持自动解析个人信息、工作经历、项目经验</p>
+              </div>
+            </div>
           )}
         </div>
 
         {error && (
-          <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600">
+          <div className="mt-2 p-3 bg-red-50 border border-red-100 rounded-xl text-xs text-red-600 flex items-center gap-2">
+            <div className="w-1.5 h-1.5 bg-red-500 rounded-full" />
             {error}
           </div>
         )}
@@ -215,10 +329,74 @@ const ImportResumeDialog: React.FC<{
   );
 };
 
+// 大预览对话框
+const PreviewDialog: React.FC<{
+  resume: Resume | null;
+  previewData: ResumeData | null;
+  loading: boolean;
+  onClose: () => void;
+}> = ({ resume, previewData, loading, onClose }) => {
+  if (!resume) return null;
+
+  return (
+    <Dialog open={!!resume} onOpenChange={onClose}>
+      <DialogContent className="max-w-5xl w-full max-h-[92vh] overflow-hidden p-0 bg-slate-100">
+        <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-md border-b border-slate-200 px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl flex items-center justify-center shadow-lg">
+                <FileText className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <DialogTitle className="text-base font-bold text-slate-800">{resume.title}</DialogTitle>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  {themes[resume.theme_id]?.name || '默认模板'} · 预览最终效果
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              {previewData && (
+                <PDFDownloader
+                  resumeData={previewData}
+                  filename={sanitizeResumeFilename(resume.title)}
+                />
+              )}
+              <Button variant="outline" size="sm" onClick={onClose} className="text-xs h-8">
+                关闭
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        <div className="p-6 overflow-auto max-h-[calc(92vh-80px)] bg-gradient-to-b from-slate-100 to-slate-200">
+          {loading ? (
+            <div className="flex items-center justify-center py-20">
+              <div className="flex flex-col items-center gap-3">
+                <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+                <p className="text-sm text-slate-500">加载中...</p>
+              </div>
+            </div>
+          ) : previewData ? (
+            <div className="flex justify-center">
+              <div className="shadow-2xl shadow-black/10 rounded-lg overflow-hidden">
+                <ResumePreview data={previewData} themeId={resume.theme_id} />
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center justify-center py-20 text-slate-400 text-sm">
+              加载失败
+            </div>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
 export default function ResumeListPage() {
   const [resumes, setResumes] = useState<Resume[]>([]);
   const [loading, setLoading] = useState(true);
-  const [deleting, setDeleting] = useState<number | null>(null);
+  const [, setDeleting] = useState<number | null>(null);
   const [previewResume, setPreviewResume] = useState<Resume | null>(null);
   const [previewData, setPreviewData] = useState<ResumeData | null>(null);
   const [loadingPreview, setLoadingPreview] = useState(false);
@@ -241,14 +419,9 @@ export default function ResumeListPage() {
     }
   };
 
-  const loadResumeDataById = async (resumeId: number): Promise<ResumeData> => {
-    const res = await resumeApi.getResume(resumeId);
-    return parseResumeData(res.data);
-  };
-
   const handleCreateResume = async () => {
+    if (!user) return;
     try {
-      if (!user) return;
       const res = await resumeApi.createResume({
         title: '我的新简历',
         user_id: user.id,
@@ -261,7 +434,6 @@ export default function ResumeListPage() {
 
   const handleDeleteResume = async (id: number) => {
     if (!confirm('确定要删除这份简历吗？此操作不可恢复。')) return;
-
     setDeleting(id);
     try {
       await resumeApi.deleteResume(id);
@@ -273,14 +445,33 @@ export default function ResumeListPage() {
     }
   };
 
+  const handleDuplicateResume = async (resume: Resume) => {
+    if (!user) return;
+    try {
+      const res = await resumeApi.getResume(resume.id);
+      const data = parseResumeData(res.data);
+      const newResume = await resumeApi.createResume({
+        title: `${resume.title} (副本)`,
+        user_id: user.id,
+        theme_id: resume.theme_id,
+        resume_data: data,
+      });
+      loadResumes();
+      navigate(`/editor/${newResume.data.id}`);
+    } catch (error) {
+      console.error('Failed to duplicate resume:', error);
+    }
+  };
+
   const handlePreview = async (resume: Resume) => {
     setLoadingPreview(true);
     setPreviewResume(resume);
-
     try {
-      setPreviewData(await loadResumeDataById(resume.id));
+      const res = await resumeApi.getResume(resume.id);
+      setPreviewData(parseResumeData(res.data));
     } catch (error) {
       console.error('Failed to load resume preview:', error);
+      setPreviewData(null);
     } finally {
       setLoadingPreview(false);
     }
@@ -288,245 +479,166 @@ export default function ResumeListPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50/50 to-white flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-b from-slate-50 via-slate-100 to-slate-50 flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <Loader2 className="animate-spin text-blue-600" size={40} />
-          <p className="text-slate-500 text-sm">加载中...</p>
+          <div className="relative">
+            <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/30">
+              <FileText className="w-8 h-8 text-white" />
+            </div>
+            <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-white rounded-lg shadow-lg flex items-center justify-center">
+              <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
+            </div>
+          </div>
+          <p className="text-sm text-slate-500 font-medium">加载中...</p>
         </div>
       </div>
     );
   }
 
-  const lastUpdated = resumes[0]
-    ? new Date(resumes[0].updated_at || resumes[0].created_at).toLocaleDateString('zh-CN')
-    : '暂无';
+  const totalResumes = resumes.length;
+  const thisWeekCount = resumes.filter(r => {
+    const date = new Date(r.updated_at || r.created_at);
+    const weekAgo = new Date();
+    weekAgo.setDate(weekAgo.getDate() - 7);
+    return date > weekAgo;
+  }).length;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50/30 via-white to-blue-50/20">
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-slate-100 to-slate-50">
       <Navbar />
 
-      <div className="max-w-7xl mx-auto px-4 py-8 space-y-8">
-        <section className="rounded-3xl border border-blue-100 bg-white/85 backdrop-blur-sm shadow-sm overflow-hidden animate-fade-in">
-          <div className="grid gap-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.9fr)] p-6 md:p-8">
-            <div className="space-y-4">
-              <div className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700 border border-blue-100">
-                <Layers3 className="w-3.5 h-3.5" />
-                简历工作台
-              </div>
-              <div>
-                <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-slate-900">管理你的简历资产</h1>
-                <p className="text-slate-500 mt-2 max-w-2xl">
-                  在这里集中处理创建、导入、预览和导出，让每一份简历都保持随时可投递的状态。
-                </p>
-              </div>
-              <div className="flex flex-col sm:flex-row gap-3">
-                <Button
-                  onClick={handleCreateResume}
-                  className="bg-blue-600 hover:bg-blue-700 shadow-blue-sm hover:shadow-blue transition-all btn-animate"
-                >
-                  <Plus size={18} className="mr-2" />
-                  新建简历
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => setImportDialogOpen(true)}
-                  className="border-blue-200 hover:bg-blue-50 hover:border-blue-300 transition-all"
-                >
-                  <Upload size={18} className="mr-2 text-blue-600" />
-                  导入简历
-                </Button>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+        {/* 顶部区域 */}
+        <div className="flex items-start justify-between mb-8">
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 rounded-2xl flex items-center justify-center shadow-xl shadow-blue-500/20">
+              <Layers3 className="w-7 h-7 text-white" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-slate-800 tracking-tight">简历工作台</h1>
+              <p className="text-sm text-slate-500 mt-0.5">管理、创建、导出你的专业简历</p>
+            </div>
+          </div>
+
+          {/* 统计卡片 */}
+          <div className="hidden md:flex items-center gap-3">
+            <div className="px-4 py-2.5 bg-white rounded-xl border border-slate-200/80 shadow-sm">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
+                  <FileText className="w-5 h-5 text-blue-500" />
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500">简历总数</p>
+                  <p className="text-lg font-bold text-slate-800">{totalResumes}</p>
+                </div>
               </div>
             </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-1 gap-3">
-              <div className="rounded-2xl border border-blue-100 bg-blue-50/70 px-4 py-4">
-                <p className="text-sm text-slate-500">简历总数</p>
-                <p className="mt-2 text-3xl font-bold text-slate-900">{resumes.length}</p>
-              </div>
-              <div className="rounded-2xl border border-slate-200 bg-white px-4 py-4">
-                <p className="text-sm text-slate-500">最近更新</p>
-                <p className="mt-2 text-sm font-semibold text-slate-800">{lastUpdated}</p>
-              </div>
-              <div className="rounded-2xl border border-slate-200 bg-white px-4 py-4">
-                <p className="text-sm text-slate-500">导出方式</p>
-                <p className="mt-2 text-sm font-semibold text-slate-800">本地生成 PDF</p>
+            <div className="px-4 py-2.5 bg-white rounded-xl border border-slate-200/80 shadow-sm">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center">
+                  <Sparkles className="w-5 h-5 text-green-500" />
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500">本周新建</p>
+                  <p className="text-lg font-bold text-slate-800">{thisWeekCount}</p>
+                </div>
               </div>
             </div>
           </div>
-        </section>
+        </div>
 
+        {/* 操作栏 */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setImportDialogOpen(true)}
+              className="h-9 border-slate-300 text-slate-700 hover:bg-slate-100 hover:border-slate-400 text-xs font-medium px-4"
+            >
+              <Upload className="w-4 h-4 mr-2" />
+              导入 PDF
+            </Button>
+          </div>
+          <Button
+            size="sm"
+            onClick={handleCreateResume}
+            className="h-9 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-xs font-medium shadow-lg shadow-blue-500/25 px-5"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            新建简历
+          </Button>
+        </div>
+
+        {/* 空状态 */}
         {resumes.length === 0 ? (
-          <Card className="text-center py-16 border-blue-100 bg-white/80 backdrop-blur-sm animate-scale-in">
-            <CardContent className="pt-6">
-              <div className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-6">
-                <FileText size={40} className="text-blue-300" />
-              </div>
-              <h3 className="text-xl font-semibold text-slate-700 mb-2">还没有简历</h3>
-              <p className="text-slate-500 mb-6 max-w-sm mx-auto">创建你的第一份专业简历，或导入现有 PDF 快速开始。</p>
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-                <Button onClick={handleCreateResume} className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto">
-                  <Plus size={18} className="mr-2" />
-                  创建简历
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => setImportDialogOpen(true)}
-                  className="border-blue-200 hover:bg-blue-50 w-full sm:w-auto"
-                >
-                  <Upload size={18} className="mr-2 text-blue-600" />
-                  导入简历
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          <div className="bg-white rounded-2xl border border-slate-200/80 p-16 text-center shadow-sm">
+            <div className="w-20 h-20 bg-gradient-to-br from-slate-100 to-slate-200 rounded-full flex items-center justify-center mx-auto mb-6">
+              <FileText className="w-10 h-10 text-slate-400" />
+            </div>
+            <h3 className="text-lg font-semibold text-slate-700 mb-2">还没有简历</h3>
+            <p className="text-sm text-slate-500 mb-8 max-w-sm mx-auto">
+              创建你的第一份专业简历，或从 PDF 导入现有简历开始
+            </p>
+            <div className="flex items-center justify-center gap-3">
+              <Button variant="outline" size="sm" onClick={() => setImportDialogOpen(true)} className="h-10 text-xs font-medium px-5">
+                <Upload className="w-4 h-4 mr-2" />
+                导入 PDF
+              </Button>
+              <Button size="sm" onClick={handleCreateResume} className="h-10 text-xs font-medium px-5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg shadow-blue-500/25">
+                <Plus className="w-4 h-4 mr-2" />
+                新建简历
+              </Button>
+            </div>
+          </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+          /* 简历网格 - 直接展示简历本身 */
+          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
             {resumes.map((resume, index) => (
-              <Card
+              <div
                 key={resume.id}
-                className="group border-blue-100 bg-white/90 backdrop-blur-sm overflow-hidden animate-fade-in shadow-sm hover:shadow-xl transition-all duration-300"
-                style={{ animationDelay: `${index * 0.06}s` }}
+                className="animate-in fade-in slide-in-from-bottom-4 duration-500"
+                style={{ animationDelay: `${index * 0.05}s`, animationFillMode: 'both' }}
               >
-                <div
-                  className="p-3 bg-gradient-to-b from-blue-50/60 to-white border-b border-blue-50 cursor-pointer"
-                  onClick={() => handlePreview(resume)}
-                >
-                  <ResumeCardPreview resume={resume} />
-                </div>
-
-                <CardContent className="p-5 space-y-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2 flex-wrap mb-2">
-                        <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-medium text-slate-600">
-                          {themes[resume.theme_id]?.name || '默认模板'}
-                        </span>
-                        <span className="inline-flex items-center rounded-full bg-blue-50 px-2.5 py-1 text-[11px] font-medium text-blue-700">
-                          <CalendarDays className="w-3 h-3 mr-1" />
-                          {new Date(resume.updated_at || resume.created_at).toLocaleDateString('zh-CN')}
-                        </span>
-                      </div>
-                      <h3 className="font-semibold text-lg text-slate-800 truncate group-hover:text-blue-600 transition-colors">
-                        {resume.title}
-                      </h3>
-                      <p className="text-sm text-slate-400 mt-1">点击上方缩略图可查看完整预览</p>
-                    </div>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-slate-600">
-                          <MoreVertical size={16} />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => handlePreview(resume)}>
-                          <Eye className="w-4 h-4 mr-2" />
-                          预览
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => navigate(`/editor/${resume.id}`)}>
-                          <Edit className="w-4 h-4 mr-2" />
-                          编辑
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          onClick={() => handleDeleteResume(resume.id)}
-                          className="text-red-600 focus:text-red-600"
-                          disabled={deleting === resume.id}
-                        >
-                          {deleting === resume.id ? (
-                            <Loader2 size={16} className="mr-2 animate-spin" />
-                          ) : (
-                            <Trash2 className="w-4 h-4 mr-2" />
-                          )}
-                          删除
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="border-blue-100 hover:bg-blue-50 hover:border-blue-200 transition-all"
-                      onClick={() => handlePreview(resume)}
-                    >
-                      <Eye size={16} className="mr-1.5 text-blue-500" />
-                      预览
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="border-blue-100 hover:bg-blue-50 hover:border-blue-200 transition-all"
-                      onClick={() => navigate(`/editor/${resume.id}`)}
-                    >
-                      <Edit size={16} className="mr-1.5 text-blue-500" />
-                      编辑
-                    </Button>
-                    <PDFDownloader
-                      filename={sanitizeResumeFilename(resume.title)}
-                      loadResumeData={() => loadResumeDataById(resume.id)}
-                      className="border-blue-100"
-                    />
-                  </div>
-                </CardContent>
-              </Card>
+                <ResumeCard
+                  resume={resume}
+                  onPreview={() => handlePreview(resume)}
+                  onEdit={() => navigate(`/editor/${resume.id}`)}
+                  onDelete={() => handleDeleteResume(resume.id)}
+                  onDuplicate={() => handleDuplicateResume(resume)}
+                />
+              </div>
             ))}
 
-            <Card
-              className="group border-dashed border-2 border-blue-200 bg-blue-50/30 hover:bg-blue-50/50 hover:border-blue-300 cursor-pointer transition-all duration-300 flex flex-col items-center justify-center min-h-[360px] animate-fade-in"
-              style={{ animationDelay: `${resumes.length * 0.06}s` }}
+            {/* 新建卡片 - 保持简历的比例风格 */}
+            <div
               onClick={handleCreateResume}
+              className="group cursor-pointer flex flex-col"
+              style={{ aspectRatio: '3/4' }}
             >
-              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 group-hover:bg-blue-200 transition-all duration-300">
-                <Plus size={32} className="text-blue-600" />
+              <div className="flex-1 bg-white border-2 border-dashed border-slate-300 hover:border-blue-400 rounded-lg flex flex-col items-center justify-center transition-all duration-300 hover:bg-blue-50/50 hover:shadow-lg hover:shadow-blue-500/5">
+                <div className="w-14 h-14 bg-gradient-to-br from-slate-100 to-slate-200 group-hover:from-blue-100 group-hover:to-indigo-100 rounded-2xl flex items-center justify-center mb-4 transition-all duration-300 group-hover:scale-110">
+                  <Plus className="w-7 h-7 text-slate-400 group-hover:text-blue-500 transition-colors" />
+                </div>
+                <p className="text-sm font-medium text-slate-500 group-hover:text-blue-600 transition-colors">新建简历</p>
+                <p className="text-xs text-slate-400 mt-1">从空白开始</p>
               </div>
-              <p className="text-slate-700 font-semibold">创建新简历</p>
-              <p className="text-sm text-slate-400 mt-1">从零开始或复制现有内容继续打磨</p>
-            </Card>
+              {/* 占位信息栏 */}
+              <div className="pt-2.5">
+                <p className="text-sm font-medium text-slate-400 group-hover:text-blue-500 transition-colors">点击创建</p>
+              </div>
+            </div>
           </div>
         )}
       </div>
 
       <ImportResumeDialog open={importDialogOpen} onOpenChange={setImportDialogOpen} onImport={loadResumes} />
-
-      {previewResume && (
-        <Dialog open={!!previewResume} onOpenChange={() => setPreviewResume(null)}>
-          <DialogContent className="max-w-5xl w-full max-h-[90vh] overflow-hidden p-0">
-            <div className="sticky top-0 bg-white/95 backdrop-blur-sm border-b px-6 py-4 flex justify-between items-center z-10">
-              <div>
-                <DialogTitle className="text-lg font-semibold text-slate-900">{previewResume.title}</DialogTitle>
-                <p className="text-xs text-slate-500 mt-1">预览最终排版，并可直接导出当前简历。</p>
-              </div>
-              <div className="flex gap-2">
-                {previewData && (
-                  <PDFDownloader
-                    resumeData={previewData}
-                    filename={sanitizeResumeFilename(previewResume.title)}
-                  />
-                )}
-                <Button variant="outline" size="sm" onClick={() => setPreviewResume(null)}>
-                  关闭
-                </Button>
-              </div>
-            </div>
-            <div className="p-6 overflow-auto max-h-[calc(90vh-80px)] bg-slate-50">
-              {loadingPreview ? (
-                <div className="flex justify-center py-12">
-                  <Loader2 className="animate-spin text-blue-600" size={32} />
-                </div>
-              ) : previewData ? (
-                <div className="flex justify-center">
-                  <ResumePreview data={previewData} themeId={previewResume.theme_id} />
-                </div>
-              ) : (
-                <div className="text-center py-12 text-slate-400">
-                  加载失败
-                </div>
-              )}
-            </div>
-          </DialogContent>
-        </Dialog>
-      )}
+      <PreviewDialog
+        resume={previewResume}
+        previewData={previewData}
+        loading={loadingPreview}
+        onClose={() => setPreviewResume(null)}
+      />
     </div>
   );
 }

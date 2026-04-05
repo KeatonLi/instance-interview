@@ -2,7 +2,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, Trash2 } from 'lucide-react';
 import type { ResumeData } from '@/types/resume';
@@ -209,589 +208,388 @@ const ResumeForm: React.FC<ResumeFormProps> = ({ data, setData }) => {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Personal Info */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">个人信息</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">姓名 *</Label>
-              <Input
-                id="name"
-                value={data.personalInfo.name}
-                onChange={(e) => updatePersonalInfo('name', e.target.value)}
-                placeholder="张三"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="title">职位标题</Label>
-              <Input
-                id="title"
-                value={data.personalInfo.title}
-                onChange={(e) => updatePersonalInfo('title', e.target.value)}
-                placeholder="前端开发工程师"
-              />
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">邮箱</Label>
-              <Input
-                id="email"
-                type="email"
-                value={data.personalInfo.email}
-                onChange={(e) => updatePersonalInfo('email', e.target.value)}
-                placeholder="example@email.com"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="phone">电话</Label>
-              <Input
-                id="phone"
-                value={data.personalInfo.phone}
-                onChange={(e) => updatePersonalInfo('phone', e.target.value)}
-                placeholder="138-xxxx-xxxx"
-              />
-            </div>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="location">所在地</Label>
+    <div className="space-y-4">
+      {/* Personal Info - 紧凑 */}
+      <div className="bg-slate-50 rounded-lg p-4">
+        <h3 className="text-sm font-semibold text-slate-700 mb-3">个人信息</h3>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="space-y-1">
+            <Label className="text-xs text-slate-500">姓名 *</Label>
             <Input
-              id="location"
+              value={data.personalInfo.name}
+              onChange={(e) => updatePersonalInfo('name', e.target.value)}
+              placeholder="张三"
+              className="h-8 text-sm"
+            />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs text-slate-500">职位</Label>
+            <Input
+              value={data.personalInfo.title}
+              onChange={(e) => updatePersonalInfo('title', e.target.value)}
+              placeholder="前端工程师"
+              className="h-8 text-sm"
+            />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs text-slate-500">邮箱</Label>
+            <Input
+              type="email"
+              value={data.personalInfo.email}
+              onChange={(e) => updatePersonalInfo('email', e.target.value)}
+              placeholder="example@mail.com"
+              className="h-8 text-sm"
+            />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs text-slate-500">电话</Label>
+            <Input
+              value={data.personalInfo.phone}
+              onChange={(e) => updatePersonalInfo('phone', e.target.value)}
+              placeholder="138-xxxx-xxxx"
+              className="h-8 text-sm"
+            />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs text-slate-500">所在地</Label>
+            <Input
               value={data.personalInfo.location}
               onChange={(e) => updatePersonalInfo('location', e.target.value)}
               placeholder="北京市"
+              className="h-8 text-sm"
             />
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="linkedin">LinkedIn</Label>
-              <Input
-                id="linkedin"
-                value={data.personalInfo.linkedin}
-                onChange={(e) => updatePersonalInfo('linkedin', e.target.value)}
-                placeholder="linkedin.com/in/yourname"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="github">GitHub</Label>
-              <Input
-                id="github"
-                value={data.personalInfo.github}
-                onChange={(e) => updatePersonalInfo('github', e.target.value)}
-                placeholder="github.com/yourname"
-              />
-            </div>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="website">个人网站</Label>
+          <div className="space-y-1">
+            <Label className="text-xs text-slate-500">GitHub</Label>
             <Input
-              id="website"
+              value={data.personalInfo.github}
+              onChange={(e) => updatePersonalInfo('github', e.target.value)}
+              placeholder="github.com/you"
+              className="h-8 text-sm"
+            />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs text-slate-500">LinkedIn</Label>
+            <Input
+              value={data.personalInfo.linkedin}
+              onChange={(e) => updatePersonalInfo('linkedin', e.target.value)}
+              placeholder="linkedin.com/in/you"
+              className="h-8 text-sm"
+            />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs text-slate-500">网站</Label>
+            <Input
               value={data.personalInfo.website}
               onChange={(e) => updatePersonalInfo('website', e.target.value)}
-              placeholder="yourname.com"
+              placeholder="yoursite.com"
+              className="h-8 text-sm"
             />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="summary">个人简介</Label>
-            <Textarea
-              id="summary"
-              value={data.personalInfo.summary}
-              onChange={(e) => updatePersonalInfo('summary', e.target.value)}
-              placeholder="简要介绍你的专业背景、核心技能和职业目标..."
-              rows={4}
-            />
-          </div>
-        </CardContent>
-      </Card>
+        </div>
+        <div className="mt-3 space-y-1">
+          <Label className="text-xs text-slate-500">个人简介</Label>
+          <Textarea
+            value={data.personalInfo.summary}
+            onChange={(e) => updatePersonalInfo('summary', e.target.value)}
+            placeholder="简要介绍你的专业背景、核心技能和职业目标..."
+            rows={2}
+            className="text-sm"
+          />
+        </div>
+      </div>
 
       <Tabs defaultValue="experience" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="experience">工作经验</TabsTrigger>
-          <TabsTrigger value="education">教育背景</TabsTrigger>
-          <TabsTrigger value="projects">项目经历</TabsTrigger>
-          <TabsTrigger value="skills">技能专长</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-4 h-9">
+          <TabsTrigger value="experience" className="text-xs">工作经验</TabsTrigger>
+          <TabsTrigger value="education" className="text-xs">教育背景</TabsTrigger>
+          <TabsTrigger value="projects" className="text-xs">项目经历</TabsTrigger>
+          <TabsTrigger value="skills" className="text-xs">技能专长</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="experience">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="text-lg">工作经验</CardTitle>
-              <Button size="sm" onClick={addWorkExperience}>
-                <Plus size={16} className="mr-1" />
-                添加经历
+        <TabsContent value="experience" className="mt-3">
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-slate-600">工作经验</span>
+              <Button size="sm" variant="outline" onClick={addWorkExperience} className="h-7 text-xs">
+                <Plus size={12} className="mr-1" /> 添加
               </Button>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {data.workExperience.map((exp) => (
-                <div key={exp.id} className="border rounded-lg p-4 space-y-3 relative">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="absolute top-2 right-2"
-                    onClick={() => removeWorkExperience(exp.id)}
-                  >
-                    <Trash2 size={16} className="text-red-500" />
+            </div>
+            {data.workExperience.map((exp) => (
+              <div key={exp.id} className="border border-slate-200 rounded-lg p-3 space-y-2 bg-white">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="grid grid-cols-2 gap-2 flex-1">
+                    <div className="space-y-1">
+                      <Label className="text-xs text-slate-500">公司</Label>
+                      <Input value={exp.company} onChange={(e) => updateWorkExperience(exp.id, 'company', e.target.value)} placeholder="ABC 公司" className="h-7 text-xs" />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs text-slate-500">职位</Label>
+                      <Input value={exp.position} onChange={(e) => updateWorkExperience(exp.id, 'position', e.target.value)} placeholder="高级工程师" className="h-7 text-xs" />
+                    </div>
+                  </div>
+                  <Button variant="ghost" size="sm" className="h-7 w-7 mt-5" onClick={() => removeWorkExperience(exp.id)}>
+                    <Trash2 size={12} className="text-red-400" />
                   </Button>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>公司名称</Label>
-                      <Input
-                        value={exp.company}
-                        onChange={(e) => updateWorkExperience(exp.id, 'company', e.target.value)}
-                        placeholder="ABC 公司"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>职位</Label>
-                      <Input
-                        value={exp.position}
-                        onChange={(e) => updateWorkExperience(exp.id, 'position', e.target.value)}
-                        placeholder="高级工程师"
-                      />
-                    </div>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="space-y-1">
+                    <Label className="text-xs text-slate-500">开始</Label>
+                    <Input type="month" value={exp.startDate} onChange={(e) => updateWorkExperience(exp.id, 'startDate', e.target.value)} className="h-7 text-xs" />
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>开始日期</Label>
-                      <Input
-                        type="month"
-                        value={exp.startDate}
-                        onChange={(e) => updateWorkExperience(exp.id, 'startDate', e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>结束日期</Label>
-                      <Input
-                        type="month"
-                        value={exp.endDate}
-                        onChange={(e) => updateWorkExperience(exp.id, 'endDate', e.target.value)}
-                        disabled={exp.current}
-                      />
-                      <label className="flex items-center gap-2 mt-1">
-                        <input
-                          type="checkbox"
-                          checked={exp.current}
-                          onChange={(e) => updateWorkExperience(exp.id, 'current', e.target.checked)}
-                        />
-                        <span className="text-sm">目前在职</span>
-                      </label>
-                    </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs text-slate-500">结束</Label>
+                    <Input type="month" value={exp.endDate} onChange={(e) => updateWorkExperience(exp.id, 'endDate', e.target.value)} disabled={exp.current} className="h-7 text-xs" />
                   </div>
-                  <div className="space-y-2">
-                    <Label>工作描述</Label>
-                    <Textarea
-                      value={exp.description}
-                      onChange={(e) => updateWorkExperience(exp.id, 'description', e.target.value)}
-                      placeholder="描述你的主要职责和工作内容..."
-                      rows={3}
-                    />
+                  <div className="flex items-center pt-4">
+                    <label className="flex items-center gap-1 text-xs text-slate-500">
+                      <input type="checkbox" checked={exp.current} onChange={(e) => updateWorkExperience(exp.id, 'current', e.target.checked)} className="w-3 h-3" /> 在职
+                    </label>
                   </div>
-                  <div className="space-y-2">
-                    <Label>主要成就</Label>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs text-slate-500">工作描述</Label>
+                  <Textarea value={exp.description} onChange={(e) => updateWorkExperience(exp.id, 'description', e.target.value)} placeholder="描述职责和成就..." rows={2} className="text-xs" />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs text-slate-500">成就</Label>
+                  <div className="space-y-1">
                     {exp.achievements.map((achievement, idx) => (
-                      <Input
-                        key={idx}
-                        value={achievement}
-                        onChange={(e) => {
-                          const newAchievements = [...exp.achievements];
-                          newAchievements[idx] = e.target.value;
-                          updateWorkExperience(exp.id, 'achievements', newAchievements);
-                        }}
-                        placeholder="例如：带领团队完成项目，提升效率30%"
-                      />
+                      <Input key={idx} value={achievement} onChange={(e) => { const newAchievements = [...exp.achievements]; newAchievements[idx] = e.target.value; updateWorkExperience(exp.id, 'achievements', newAchievements); }} placeholder="带领团队完成 XX 项目" className="h-6 text-xs" />
                     ))}
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        const newAchievements = [...exp.achievements, ''];
-                        updateWorkExperience(exp.id, 'achievements', newAchievements);
-                      }}
-                    >
-                      <Plus size={14} className="mr-1" />
-                      添加成就
+                  </div>
+                  <Button variant="outline" size="sm" onClick={() => { const newAchievements = [...exp.achievements, '']; updateWorkExperience(exp.id, 'achievements', newAchievements); }} className="h-6 text-xs mt-1">
+                    <Plus size={10} className="mr-1" /> 添加
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="education" className="mt-3">
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-slate-600">教育背景</span>
+              <Button size="sm" variant="outline" onClick={addEducation} className="h-7 text-xs">
+                <Plus size={12} className="mr-1" /> 添加
+              </Button>
+            </div>
+            {data.education.map((edu) => (
+              <div key={edu.id} className="border border-slate-200 rounded-lg p-3 space-y-2 bg-white">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="grid grid-cols-2 gap-2 flex-1">
+                    <div className="space-y-1">
+                      <Label className="text-xs text-slate-500">学校</Label>
+                      <Input value={edu.school} onChange={(e) => updateEducation(edu.id, 'school', e.target.value)} placeholder="北京大学" className="h-7 text-xs" />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs text-slate-500">学位</Label>
+                      <Input value={edu.degree} onChange={(e) => updateEducation(edu.id, 'degree', e.target.value)} placeholder="本科/硕士" className="h-7 text-xs" />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs text-slate-500">专业</Label>
+                      <Input value={edu.field} onChange={(e) => updateEducation(edu.id, 'field', e.target.value)} placeholder="计算机科学" className="h-7 text-xs" />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs text-slate-500">GPA</Label>
+                      <Input value={edu.gpa} onChange={(e) => updateEducation(edu.id, 'gpa', e.target.value)} placeholder="3.8/4.0" className="h-7 text-xs" />
+                    </div>
+                  </div>
+                  <Button variant="ghost" size="sm" className="h-7 w-7 mt-5" onClick={() => removeEducation(edu.id)}>
+                    <Trash2 size={12} className="text-red-400" />
+                  </Button>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-1">
+                    <Label className="text-xs text-slate-500">开始</Label>
+                    <Input type="month" value={edu.startDate} onChange={(e) => updateEducation(edu.id, 'startDate', e.target.value)} className="h-7 text-xs" />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs text-slate-500">结束</Label>
+                    <Input type="month" value={edu.endDate} onChange={(e) => updateEducation(edu.id, 'endDate', e.target.value)} className="h-7 text-xs" />
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs text-slate-500">备注</Label>
+                  <Textarea value={edu.description} onChange={(e) => updateEducation(edu.id, 'description', e.target.value)} placeholder="相关课程、荣誉等..." rows={1} className="text-xs" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="projects" className="mt-3">
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-slate-600">项目经历</span>
+              <Button size="sm" variant="outline" onClick={addProject} className="h-7 text-xs">
+                <Plus size={12} className="mr-1" /> 添加
+              </Button>
+            </div>
+            {data.projects.map((project) => (
+              <div key={project.id} className="border border-slate-200 rounded-lg p-3 space-y-2 bg-white">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="grid grid-cols-2 gap-2 flex-1">
+                    <div className="space-y-1">
+                      <Label className="text-xs text-slate-500">项目名</Label>
+                      <Input value={project.name} onChange={(e) => updateProject(project.id, 'name', e.target.value)} placeholder="电商平台" className="h-7 text-xs" />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs text-slate-500">角色</Label>
+                      <Input value={project.role} onChange={(e) => updateProject(project.id, 'role', e.target.value)} placeholder="前端负责人" className="h-7 text-xs" />
+                    </div>
+                  </div>
+                  <Button variant="ghost" size="sm" className="h-7 w-7 mt-5" onClick={() => removeProject(project.id)}>
+                    <Trash2 size={12} className="text-red-400" />
+                  </Button>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="space-y-1">
+                    <Label className="text-xs text-slate-500">开始</Label>
+                    <Input type="month" value={project.startDate} onChange={(e) => updateProject(project.id, 'startDate', e.target.value)} className="h-7 text-xs" />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs text-slate-500">结束</Label>
+                    <Input type="month" value={project.endDate} onChange={(e) => updateProject(project.id, 'endDate', e.target.value)} disabled={project.current} className="h-7 text-xs" />
+                  </div>
+                  <div className="flex items-center pt-4">
+                    <label className="flex items-center gap-1 text-xs text-slate-500">
+                      <input type="checkbox" checked={project.current} onChange={(e) => updateProject(project.id, 'current', e.target.checked)} className="w-3 h-3" /> 进行中
+                    </label>
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs text-slate-500">描述</Label>
+                  <Textarea value={project.description} onChange={(e) => updateProject(project.id, 'description', e.target.value)} placeholder="项目背景、目标、负责工作..." rows={2} className="text-xs" />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs text-slate-500">技术栈</Label>
+                  <div className="flex flex-wrap gap-1">
+                    {project.technologies.map((tech, idx) => (
+                      <Input key={idx} value={tech} onChange={(e) => { const newTechs = [...project.technologies]; newTechs[idx] = e.target.value; updateProject(project.id, 'technologies', newTechs); }} placeholder="React" className="w-20 h-6 text-xs" />
+                    ))}
+                    <Button variant="outline" size="sm" onClick={() => { const newTechs = [...project.technologies, '']; updateProject(project.id, 'technologies', newTechs); }} className="h-6 w-6 p-0">
+                      <Plus size={10} />
                     </Button>
                   </div>
                 </div>
-              ))}
-            </CardContent>
-          </Card>
+                <div className="space-y-1">
+                  <Label className="text-xs text-slate-500">链接</Label>
+                  <Input value={project.link} onChange={(e) => updateProject(project.id, 'link', e.target.value)} placeholder="github.com/yourname/project" className="h-7 text-xs" />
+                </div>
+              </div>
+            ))}
+          </div>
         </TabsContent>
 
-        <TabsContent value="education">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="text-lg">教育背景</CardTitle>
-              <Button size="sm" onClick={addEducation}>
-                <Plus size={16} className="mr-1" />
-                添加教育经历
+        <TabsContent value="skills" className="mt-3">
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-slate-600">技能专长</span>
+              <Button size="sm" variant="outline" onClick={addSkill} className="h-7 text-xs">
+                <Plus size={12} className="mr-1" /> 添加
               </Button>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {data.education.map((edu) => (
-                <div key={edu.id} className="border rounded-lg p-4 space-y-3 relative">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="absolute top-2 right-2"
-                    onClick={() => removeEducation(edu.id)}
-                  >
-                    <Trash2 size={16} className="text-red-500" />
+            </div>
+            {data.skills.map((skillGroup) => (
+              <div key={skillGroup.id} className="border border-slate-200 rounded-lg p-3 space-y-2 bg-white">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="space-y-1 flex-1">
+                    <Label className="text-xs text-slate-500">分类</Label>
+                    <Input value={skillGroup.category} onChange={(e) => updateSkill(skillGroup.id, 'category', e.target.value)} placeholder="编程语言/框架/工具" className="h-7 text-xs" />
+                  </div>
+                  <Button variant="ghost" size="sm" className="h-7 w-7 mt-5" onClick={() => removeSkill(skillGroup.id)}>
+                    <Trash2 size={12} className="text-red-400" />
                   </Button>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>学校名称</Label>
-                      <Input
-                        value={edu.school}
-                        onChange={(e) => updateEducation(edu.id, 'school', e.target.value)}
-                        placeholder="北京大学"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>学位</Label>
-                      <Input
-                        value={edu.degree}
-                        onChange={(e) => updateEducation(edu.id, 'degree', e.target.value)}
-                        placeholder="本科 / 硕士"
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>专业</Label>
-                      <Input
-                        value={edu.field}
-                        onChange={(e) => updateEducation(edu.id, 'field', e.target.value)}
-                        placeholder="计算机科学与技术"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>GPA</Label>
-                      <Input
-                        value={edu.gpa}
-                        onChange={(e) => updateEducation(edu.id, 'gpa', e.target.value)}
-                        placeholder="3.8/4.0"
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>开始日期</Label>
-                      <Input
-                        type="month"
-                        value={edu.startDate}
-                        onChange={(e) => updateEducation(edu.id, 'startDate', e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>毕业日期</Label>
-                      <Input
-                        type="month"
-                        value={edu.endDate}
-                        onChange={(e) => updateEducation(edu.id, 'endDate', e.target.value)}
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>备注</Label>
-                    <Textarea
-                      value={edu.description}
-                      onChange={(e) => updateEducation(edu.id, 'description', e.target.value)}
-                      placeholder="相关课程、荣誉等..."
-                      rows={2}
-                    />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs text-slate-500">技能</Label>
+                  <div className="flex flex-wrap gap-1">
+                    {skillGroup.items.map((skill, idx) => (
+                      <Input key={idx} value={skill} onChange={(e) => { const newItems = [...skillGroup.items]; newItems[idx] = e.target.value; updateSkill(skillGroup.id, 'items', newItems); }} placeholder="JavaScript" className="w-24 h-6 text-xs" />
+                    ))}
+                    <Button variant="outline" size="sm" onClick={() => { const newItems = [...skillGroup.items, '']; updateSkill(skillGroup.id, 'items', newItems); }} className="h-6 w-6 p-0">
+                      <Plus size={10} />
+                    </Button>
                   </div>
                 </div>
-              ))}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="projects">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="text-lg">项目经历</CardTitle>
-              <Button size="sm" onClick={addProject}>
-                <Plus size={16} className="mr-1" />
-                添加项目
-              </Button>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {data.projects.map((project) => (
-                <div key={project.id} className="border rounded-lg p-4 space-y-3 relative">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="absolute top-2 right-2"
-                    onClick={() => removeProject(project.id)}
-                  >
-                    <Trash2 size={16} className="text-red-500" />
-                  </Button>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>项目名称</Label>
-                      <Input
-                        value={project.name}
-                        onChange={(e) => updateProject(project.id, 'name', e.target.value)}
-                        placeholder="电商平台重构"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>你的角色</Label>
-                      <Input
-                        value={project.role}
-                        onChange={(e) => updateProject(project.id, 'role', e.target.value)}
-                        placeholder="前端负责人"
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>开始日期</Label>
-                      <Input
-                        type="month"
-                        value={project.startDate}
-                        onChange={(e) => updateProject(project.id, 'startDate', e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>结束日期</Label>
-                      <Input
-                        type="month"
-                        value={project.endDate}
-                        onChange={(e) => updateProject(project.id, 'endDate', e.target.value)}
-                        disabled={project.current}
-                      />
-                      <label className="flex items-center gap-2 mt-1">
-                        <input
-                          type="checkbox"
-                          checked={project.current}
-                          onChange={(e) => updateProject(project.id, 'current', e.target.checked)}
-                        />
-                        <span className="text-sm">进行中</span>
-                      </label>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>项目描述</Label>
-                    <Textarea
-                      value={project.description}
-                      onChange={(e) => updateProject(project.id, 'description', e.target.value)}
-                      placeholder="描述项目背景、目标和你负责的工作..."
-                      rows={3}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>使用技术</Label>
-                    <div className="flex flex-wrap gap-2">
-                      {project.technologies.map((tech, idx) => (
-                        <Input
-                          key={idx}
-                          value={tech}
-                          onChange={(e) => {
-                            const newTechs = [...project.technologies];
-                            newTechs[idx] = e.target.value;
-                            updateProject(project.id, 'technologies', newTechs);
-                          }}
-                          placeholder="React"
-                          className="w-24"
-                        />
-                      ))}
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          const newTechs = [...project.technologies, ''];
-                          updateProject(project.id, 'technologies', newTechs);
-                        }}
-                      >
-                        <Plus size={14} />
-                      </Button>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>项目链接</Label>
-                    <Input
-                      value={project.link}
-                      onChange={(e) => updateProject(project.id, 'link', e.target.value)}
-                      placeholder="github.com/yourname/project"
-                    />
-                  </div>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="skills">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="text-lg">技能专长</CardTitle>
-              <Button size="sm" onClick={addSkill}>
-                <Plus size={16} className="mr-1" />
-                添加技能分类
-              </Button>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {data.skills.map((skillGroup) => (
-                <div key={skillGroup.id} className="border rounded-lg p-4 space-y-3 relative">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="absolute top-2 right-2"
-                    onClick={() => removeSkill(skillGroup.id)}
-                  >
-                    <Trash2 size={16} className="text-red-500" />
-                  </Button>
-                  <div className="space-y-2">
-                    <Label>技能分类</Label>
-                    <Input
-                      value={skillGroup.category}
-                      onChange={(e) => updateSkill(skillGroup.id, 'category', e.target.value)}
-                      placeholder="编程语言 / 框架 / 工具"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>技能项</Label>
-                    <div className="flex flex-wrap gap-2">
-                      {skillGroup.items.map((skill, idx) => (
-                        <Input
-                          key={idx}
-                          value={skill}
-                          onChange={(e) => {
-                            const newItems = [...skillGroup.items];
-                            newItems[idx] = e.target.value;
-                            updateSkill(skillGroup.id, 'items', newItems);
-                          }}
-                          placeholder="JavaScript"
-                          className="w-28"
-                        />
-                      ))}
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          const newItems = [...skillGroup.items, ''];
-                          updateSkill(skillGroup.id, 'items', newItems);
-                        }}
-                      >
-                        <Plus size={14} />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
+              </div>
+            ))}
+          </div>
         </TabsContent>
       </Tabs>
 
-      {/* Awards */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-lg">荣誉奖项</CardTitle>
-          <Button size="sm" onClick={addAward}>
-            <Plus size={16} className="mr-1" />
-            添加奖项
+      {/* Awards - 紧凑 */}
+      <div className="bg-slate-50 rounded-lg p-4">
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-sm font-semibold text-slate-700">荣誉奖项</span>
+          <Button size="sm" variant="outline" onClick={addAward} className="h-7 text-xs">
+            <Plus size={12} className="mr-1" /> 添加
           </Button>
-        </CardHeader>
-        <CardContent className="space-y-4">
+        </div>
+        <div className="space-y-2">
           {data.awards.map((award) => (
-            <div key={award.id} className="border rounded-lg p-4 space-y-3 relative">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="absolute top-2 right-2"
-                onClick={() => removeAward(award.id)}
-              >
-                <Trash2 size={16} className="text-red-500" />
-              </Button>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>奖项名称</Label>
-                  <Input
-                    value={award.title}
-                    onChange={(e) => updateAward(award.id, 'title', e.target.value)}
-                    placeholder="优秀员工奖"
-                  />
+            <div key={award.id} className="border border-slate-200 rounded-lg p-2 space-y-2 bg-white">
+              <div className="flex items-start justify-between gap-2">
+                <div className="grid grid-cols-2 gap-2 flex-1">
+                  <div className="space-y-1">
+                    <Label className="text-xs text-slate-500">奖项</Label>
+                    <Input value={award.title} onChange={(e) => updateAward(award.id, 'title', e.target.value)} placeholder="优秀员工奖" className="h-7 text-xs" />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs text-slate-500">机构</Label>
+                    <Input value={award.organization} onChange={(e) => updateAward(award.id, 'organization', e.target.value)} placeholder="ABC 公司" className="h-7 text-xs" />
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label>颁发机构</Label>
-                  <Input
-                    value={award.organization}
-                    onChange={(e) => updateAward(award.id, 'organization', e.target.value)}
-                    placeholder="ABC 公司"
-                  />
+                <Button variant="ghost" size="sm" className="h-7 w-7 mt-4" onClick={() => removeAward(award.id)}>
+                  <Trash2 size={12} className="text-red-400" />
+                </Button>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <Label className="text-xs text-slate-500">日期</Label>
+                  <Input type="month" value={award.date} onChange={(e) => updateAward(award.id, 'date', e.target.value)} className="h-7 text-xs" />
                 </div>
-              </div>
-              <div className="space-y-2">
-                <Label>获奖日期</Label>
-                <Input
-                  type="month"
-                  value={award.date}
-                  onChange={(e) => updateAward(award.id, 'date', e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>描述</Label>
-                <Textarea
-                  value={award.description}
-                  onChange={(e) => updateAward(award.id, 'description', e.target.value)}
-                  placeholder="简要描述这个奖项..."
-                  rows={2}
-                />
+                <div className="space-y-1">
+                  <Label className="text-xs text-slate-500">描述</Label>
+                  <Input value={award.description} onChange={(e) => updateAward(award.id, 'description', e.target.value)} placeholder="简要描述..." className="h-7 text-xs" />
+                </div>
               </div>
             </div>
           ))}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
-      {/* Languages */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-lg">语言能力</CardTitle>
-          <Button size="sm" onClick={addLanguage}>
-            <Plus size={16} className="mr-1" />
-            添加语言
+      {/* Languages - 紧凑 */}
+      <div className="bg-slate-50 rounded-lg p-4">
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-sm font-semibold text-slate-700">语言能力</span>
+          <Button size="sm" variant="outline" onClick={addLanguage} className="h-7 text-xs">
+            <Plus size={12} className="mr-1" /> 添加
           </Button>
-        </CardHeader>
-        <CardContent className="space-y-4">
+        </div>
+        <div className="space-y-2">
           {data.languages.map((lang) => (
-            <div key={lang.id} className="border rounded-lg p-4 space-y-3 relative">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="absolute top-2 right-2"
-                onClick={() => removeLanguage(lang.id)}
-              >
-                <Trash2 size={16} className="text-red-500" />
-              </Button>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>语言</Label>
-                  <Input
-                    value={lang.name}
-                    onChange={(e) => updateLanguage(lang.id, 'name', e.target.value)}
-                    placeholder="英语"
-                  />
+            <div key={lang.id} className="border border-slate-200 rounded-lg p-2 bg-white">
+              <div className="flex items-start justify-between gap-2">
+                <div className="grid grid-cols-2 gap-2 flex-1">
+                  <div className="space-y-1">
+                    <Label className="text-xs text-slate-500">语言</Label>
+                    <Input value={lang.name} onChange={(e) => updateLanguage(lang.id, 'name', e.target.value)} placeholder="英语" className="h-7 text-xs" />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs text-slate-500">熟练度</Label>
+                    <Input value={lang.level} onChange={(e) => updateLanguage(lang.id, 'level', e.target.value)} placeholder="流利/中等" className="h-7 text-xs" />
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label>熟练程度</Label>
-                  <Input
-                    value={lang.level}
-                    onChange={(e) => updateLanguage(lang.id, 'level', e.target.value)}
-                    placeholder="母语 / 流利 / 中等"
-                  />
-                </div>
+                <Button variant="ghost" size="sm" className="h-7 w-7 mt-4" onClick={() => removeLanguage(lang.id)}>
+                  <Trash2 size={12} className="text-red-400" />
+                </Button>
               </div>
             </div>
           ))}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 };

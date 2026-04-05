@@ -36,7 +36,18 @@ const parseJsonField = <T,>(value: string | unknown | undefined, fallback: T): T
   return fallback;
 };
 
-export const parseResumeData = (resume: SerializedResumeLike): ResumeData => {
+export const parseResumeData = (resume: SerializedResumeLike | null | undefined): ResumeData => {
+  // 处理null或undefined
+  if (!resume) {
+    return defaultResumeData;
+  }
+
+  // 防御性处理：如果resume是数组或函数等无效类型，返回默认数据
+  if (typeof resume !== 'object') {
+    console.warn('parseResumeData: resume is not an object, returning default');
+    return defaultResumeData;
+  }
+
   const data = {
     personalInfo: parseJsonField(resume.personal_info, defaultResumeData.personalInfo),
     education: parseJsonField(resume.education, defaultResumeData.education),
