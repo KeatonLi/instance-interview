@@ -12,6 +12,28 @@ const ResumePreview: React.FC<ResumePreviewProps> = ({ data, themeId = 0, scale 
   const theme = themes[themeId] || defaultTheme;
   const layout = theme.layout as LayoutType;
 
+  // 防御性检查：确保 data 的所有数组字段都存在
+  data = {
+    ...data,
+    workExperience: data?.workExperience || [],
+    projects: data?.projects || [],
+    education: data?.education || [],
+    skills: data?.skills || [],
+    awards: data?.awards || [],
+    languages: data?.languages || [],
+    personalInfo: data?.personalInfo || {
+      name: '',
+      title: '',
+      email: '',
+      phone: '',
+      location: '',
+      linkedin: '',
+      github: '',
+      website: '',
+      summary: '',
+    },
+  };
+
   // 通用工具函数
   const formatDate = (dateStr: string) => {
     if (!dateStr) return '';

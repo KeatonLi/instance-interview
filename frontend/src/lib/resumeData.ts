@@ -2,34 +2,66 @@ import type { ResumeData } from '@/types/resume';
 import { defaultResumeData } from '@/types/resume';
 
 type SerializedResumeLike = {
-  personal_info?: string;
-  education?: string;
-  work_experience?: string;
-  projects?: string;
-  skills?: string;
-  awards?: string;
-  languages?: string;
+  personal_info?: string | Record<string, unknown>;
+  education?: string | unknown[];
+  work_experience?: string | unknown[];
+  projects?: string | unknown[];
+  skills?: string | unknown[];
+  awards?: string | unknown[];
+  languages?: string | unknown[];
 };
 
-const parseJsonField = <T,>(value: string | undefined, fallback: T): T => {
+const parseJsonField = <T,>(value: string | unknown | undefined, fallback: T): T => {
   if (!value) return fallback;
 
-  try {
-    return JSON.parse(value) as T;
-  } catch {
+  // 如果已经是对象（不是字符串），直接返回
+  if (typeof value === 'object') {
+    if (Array.isArray(value)) return value as unknown as T;
+    if (value !== null) return value as T;
     return fallback;
   }
+
+  // 如果是字符串，尝试解析
+  if (typeof value === 'string') {
+    if (value.trim() === '') return fallback;
+    try {
+      const parsed = JSON.parse(value);
+      if (parsed === null) return fallback;
+      return parsed as T;
+    } catch {
+      return fallback;
+    }
+  }
+
+  return fallback;
 };
 
-export const parseResumeData = (resume: SerializedResumeLike): ResumeData => ({
-  personalInfo: parseJsonField(resume.personal_info, defaultResumeData.personalInfo),
-  education: parseJsonField(resume.education, defaultResumeData.education),
-  workExperience: parseJsonField(resume.work_experience, defaultResumeData.workExperience),
-  projects: parseJsonField(resume.projects, defaultResumeData.projects),
-  skills: parseJsonField(resume.skills, defaultResumeData.skills),
-  awards: parseJsonField(resume.awards, defaultResumeData.awards),
-  languages: parseJsonField(resume.languages, defaultResumeData.languages),
-});
+export const parseResumeData = (resume: SerializedResumeLike): ResumeData => {
+  const data = {
+    personalInfo: parseJsonField(resume.personal_info, defaultResumeData.personalInfo),
+    education: parseJsonField(resume.education, defaultResumeData.education),
+    workExperience: parseJsonField(resume.work_experience, defaultResumeData.workExperience),
+    projects: parseJsonField(resume.projects, defaultResumeData.projects),
+    skills: parseJsonField(resume.skills, defaultResumeData.skills),
+    awards: parseJsonField(resume.awards, defaultResumeData.awards),
+    languages: parseJsonField(resume.languages, defaultResumeData.languages),
+  };
+
+  // 确保所有数组字段都是数组，不是null
+  if (!Array.isArray(data.education)) data.education = [];
+  if (!Array.isArray(data.workExperience)) data.workExperience = [];
+  if (!Array.isArray(data.projects)) data.projects = [];
+  if (!Array.isArray(data.skills)) data.skills = [];
+  if (!Array.isArray(data.awards)) data.awards = [];
+  if (!Array.isArray(data.languages)) data.languages = [];
+
+  // 确保personalInfo是对象
+  if (!data.personalInfo || typeof data.personalInfo !== 'object') {
+    data.personalInfo = defaultResumeData.personalInfo;
+  }
+
+  return data as ResumeData;
+};
 
 export const buildResumePayload = (resumeData: ResumeData) => ({
   personal_info: JSON.stringify(resumeData.personalInfo),

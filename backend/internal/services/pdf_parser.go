@@ -8,7 +8,7 @@ import (
 	"regexp"
 	"strings"
 	"time"
-	
+
 	"github.com/ledongthuc/pdf"
 )
 
@@ -24,7 +24,6 @@ type ParsedResume struct {
 
 // ParsePDF 解析 PDF 文件并提取简历信息
 func ParsePDF(file io.Reader) (result *ParsedResume, parseErr error) {
-	// 使用 defer recover 捕获所有可能的 panic
 	defer func() {
 		if r := recover(); r != nil {
 			parseErr = fmt.Errorf("PDF 解析 panic: %v", r)
@@ -32,32 +31,26 @@ func ParsePDF(file io.Reader) (result *ParsedResume, parseErr error) {
 		}
 	}()
 
-	// 读取 PDF 内容
 	buf := new(bytes.Buffer)
 	if _, err := buf.ReadFrom(file); err != nil {
 		return nil, fmt.Errorf("读取文件失败: %w", err)
 	}
 
-	// 检查文件是否为空
 	if buf.Len() == 0 {
 		return nil, fmt.Errorf("文件内容为空")
 	}
 
-	// 检查是否看起来像 PDF（PDF 文件以 %PDF- 开头）
 	pdfBytes := buf.Bytes()
 	if len(pdfBytes) < 4 || string(pdfBytes[:4]) != "%PDF" {
 		return nil, fmt.Errorf("文件不是有效的 PDF 格式")
 	}
 
-	// 使用 ledongthuc/pdf 解析 PDF
 	pdfReader, err := pdf.NewReader(bytes.NewReader(pdfBytes), int64(buf.Len()))
 	if err != nil {
 		return nil, fmt.Errorf("解析 PDF 失败: %w", err)
 	}
 
 	var fullText strings.Builder
-
-	// 遍历所有页面提取文本
 	numPages := pdfReader.NumPage()
 	if numPages == 0 {
 		return nil, fmt.Errorf("PDF 中没有页面")
@@ -65,8 +58,6 @@ func ParsePDF(file io.Reader) (result *ParsedResume, parseErr error) {
 
 	for pageNum := 1; pageNum <= numPages; pageNum++ {
 		page := pdfReader.Page(pageNum)
-
-		// 获取页面文本
 		text, err := page.GetPlainText(nil)
 		if err != nil {
 			continue
@@ -87,6 +78,48 @@ func ParsePDF(file io.Reader) (result *ParsedResume, parseErr error) {
 	return parsed, nil
 }
 
+// sectionBoundary 标识一个section的起止位置
+type sectionBoundary struct {
+	start int
+	end   int
+}
+
+// sectionTitle section标题的关键词
+var (
+	// 教育section关键词（按优先级排序）
+	eduTitles = []string{"教育背景", "教育经历", "学历背景", "Education", "EDUCATION"}
+	// 工作section关键词
+	workTitles = []string{"工作经历", "工作经验", "工作经历", "实习经历", "Employment", "WORK EXPERIENCE"}
+	// 项目section关键词
+	projTitles = []string{"项目经验", "项目经历", "项目背景", "Projects", "PROJECT"}
+	// 技能section关键词
+	skillTitles = []string{"专业技能", "技能特长", "技术能力", "技能证书", "Skills", "SKILLS", "技术栈"}
+	// 个人信息section关键词
+	aboutTitles = []string{"个人信息", "个人简介", "基本信息", "个人概述", "About", "PROFILE"}
+)
+
+// sectionPatterns 各section的正则模式
+var (
+	// 时间范围模式：2020.09 - 2022.06 或 2020年9月 - 2022年6月 或 2020/09 - 2022/06
+	timeRangeRe = regexp.MustCompile(`(\d{4}[年\.\-/]\d{1,2}?\s*[-–~]\s*\d{4}[年\.\-/]?\d{0,2}?|至今|现在|current|present)`)
+	// 单独时间模式：2020.09 或 2020年9月
+	singleTimeRe = regexp.MustCompile(`(\d{4}[年\.\-/]\d{1,2}?|至今|现在)`)
+	// 邮箱模式
+	emailRe = regexp.MustCompile(`[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}`)
+	// 手机号模式（中国）
+	phoneRe = regexp.MustCompile(`1[3-9]\d{9}|(?:1[3-9]\d[\s\-]?\d{4}[\s\-]?\d{4})`)
+	// 学位模式
+	degreeRe = regexp.MustCompile(`(?:博士|硕士|本科|学士|专科|MBA|PhD|博士研究生|硕士研究生|大学)`)
+	// 学校模式 - 简单匹配大学/学院/学校关键词
+	schoolRe = regexp.MustCompile(`(?:大学|学院|学校)`)
+	// 公司模式 - 简单匹配公司相关关键词
+	companyRe = regexp.MustCompile(`(?:公司|集团|科技|有限|企业)`)
+	// 职位模式
+	positionRe = regexp.MustCompile(`(?:工程师|设计师|经理|总监|架构师|负责人|主管|专员|Analyst|Consultant|Engineer|Developer|Designer|Manager|Director)`)
+	// 技术栈模式
+	techRe = regexp.MustCompile(`([A-Za-z0-9+#\.\-]{2,30})`)
+)
+
 // parseResumeStructure 解析简历文本结构
 func parseResumeStructure(text string) *ParsedResume {
 	resume := &ParsedResume{
@@ -96,44 +129,137 @@ func parseResumeStructure(text string) *ParsedResume {
 		Projects:       make([]map[string]interface{}, 0),
 		Skills:         make([]map[string]interface{}, 0),
 	}
-	
-	// 清理文本
-	text = cleanText(text)
+
+	// 1. 先按行分割，保留结构信息
 	lines := strings.Split(text, "\n")
-	
-	// 提取个人信息（通常在开头）
-	resume.PersonalInfo = extractPersonalInfo(lines, text)
-	
-	// 提取教育经历
-	resume.Education = extractEducation(text)
-	
-	// 提取工作经历
-	resume.WorkExperience = extractWorkExperience(text)
-	
-	// 提取项目经验
-	resume.Projects = extractProjects(text)
-	
-	// 提取技能
-	resume.Skills = extractSkills(text)
-	
+	var cleanLines []string
+	for _, line := range lines {
+		trimmed := strings.TrimSpace(line)
+		if trimmed != "" {
+			cleanLines = append(cleanLines, trimmed)
+		}
+	}
+
+	// 2. 识别各个section的边界
+	sections := identifySections(cleanLines)
+
+	// 3. 提取个人信息（简历开头，section之外的部分）
+	resume.PersonalInfo = extractPersonalInfoV2(cleanLines, sections)
+
+	// 4. 提取教育经历
+	if eduSection, ok := sections["education"]; ok {
+		resume.Education = extractEducationV2(cleanLines[eduSection.start:eduSection.end], cleanLines)
+	}
+
+	// 5. 提取工作经历
+	if workSection, ok := sections["work"]; ok {
+		resume.WorkExperience = extractWorkExperienceV2(cleanLines[workSection.start:workSection.end])
+	}
+
+	// 6. 提取项目经验
+	if projSection, ok := sections["project"]; ok {
+		resume.Projects = extractProjectsV2(cleanLines[projSection.start:projSection.end])
+	}
+
+	// 7. 提取技能
+	if skillSection, ok := sections["skill"]; ok {
+		resume.Skills = extractSkillsV2(cleanLines[skillSection.start:skillSection.end])
+	}
+
 	return resume
 }
 
-// cleanText 清理文本
-func cleanText(text string) string {
-	// 移除多余空白（换行、制表符等替换为空格）
-	re := regexp.MustCompile(`[[:space:]]+`)
-	text = re.ReplaceAllString(text, " ")
+// identifySections 识别各个section的起止位置
+func identifySections(lines []string) map[string]sectionBoundary {
+	sections := make(map[string]sectionBoundary)
 
-	// 移除特殊字符但保留基本标点和中文标点
-	re2 := regexp.MustCompile(`[^\w\s\-,.@/:，。、；：""''（）《》【】]`)
-	text = re2.ReplaceAllString(text, " ")
+	// 遍历所有行，找到section标题
+	for i, line := range lines {
+		upperLine := strings.ToUpper(line)
 
-	return strings.TrimSpace(text)
+		// 跳过太短的行（不可能是section标题）
+		if len(line) < 4 {
+			continue
+		}
+
+		// 识别教育section
+		if sections["education"].start == 0 {
+			for _, title := range eduTitles {
+				if strings.Contains(upperLine, strings.ToUpper(title)) {
+					sections["education"] = sectionBoundary{start: i + 1, end: len(lines)}
+					break
+				}
+			}
+		}
+
+		// 识别工作section
+		if sections["work"].start == 0 {
+			for _, title := range workTitles {
+				if strings.Contains(upperLine, strings.ToUpper(title)) {
+					sections["work"] = sectionBoundary{start: i + 1, end: len(lines)}
+					break
+				}
+			}
+		}
+
+		// 识别项目section
+		if sections["project"].start == 0 {
+			for _, title := range projTitles {
+				if strings.Contains(upperLine, strings.ToUpper(title)) {
+					sections["project"] = sectionBoundary{start: i + 1, end: len(lines)}
+					break
+				}
+			}
+		}
+
+		// 识别技能section
+		if sections["skill"].start == 0 {
+			for _, title := range skillTitles {
+				if strings.Contains(upperLine, strings.ToUpper(title)) {
+					sections["skill"] = sectionBoundary{start: i + 1, end: len(lines)}
+					break
+				}
+			}
+		}
+	}
+
+	// 根据section顺序调整end位置
+	// 如果某个后续section开始了，当前section的end应该是那个section的start
+	type sectionName struct {
+		key   string
+		start int
+	}
+	var sectionStarts []sectionName
+
+	for key, section := range sections {
+		if section.start > 0 {
+			sectionStarts = append(sectionStarts, sectionName{key, section.start})
+		}
+	}
+
+	// 按start位置排序
+	for i := 0; i < len(sectionStarts)-1; i++ {
+		for j := i + 1; j < len(sectionStarts); j++ {
+			if sectionStarts[j].start < sectionStarts[i].start {
+				sectionStarts[i], sectionStarts[j] = sectionStarts[j], sectionStarts[i]
+			}
+		}
+	}
+
+	// 更新每个section的end为下一个section的start
+	for i, sn := range sectionStarts {
+		if i < len(sectionStarts)-1 {
+			bound := sections[sn.key]
+			bound.end = sectionStarts[i+1].start
+			sections[sn.key] = bound
+		}
+	}
+
+	return sections
 }
 
-// extractPersonalInfo 提取个人信息
-func extractPersonalInfo(lines []string, fullText string) map[string]interface{} {
+// extractPersonalInfoV2 提取个人信息（改进版）
+func extractPersonalInfoV2(lines []string, sections map[string]sectionBoundary) map[string]interface{} {
 	info := map[string]interface{}{
 		"name":     "",
 		"title":    "",
@@ -145,197 +271,245 @@ func extractPersonalInfo(lines []string, fullText string) map[string]interface{}
 		"website":  "",
 		"summary":  "",
 	}
-	
-	// 提取邮箱
-	emailRe := regexp.MustCompile(`[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}`)
-	if email := emailRe.FindString(fullText); email != "" {
-		info["email"] = email
-	}
-	
-	// 提取手机号（中国）
-	phoneRe := regexp.MustCompile(`1[3-9]\d{2}[\s\-]?\d{4}[\s\-]?\d{4}`)
-	if phone := phoneRe.FindString(fullText); phone != "" {
-		info["phone"] = phone
-	}
-	
-	// 提取 GitHub
-	githubRe := regexp.MustCompile(`(?:github\.com/|github:)\s*([a-zA-Z0-9_-]+)`)
-	if matches := githubRe.FindStringSubmatch(fullText); len(matches) > 1 {
-		info["github"] = "github.com/" + matches[1]
-	}
-	
-	// 提取 LinkedIn
-	linkedinRe := regexp.MustCompile(`(?:linkedin\.com/in/|linkedin:)\s*([a-zA-Z0-9_-]+)`)
-	if matches := linkedinRe.FindStringSubmatch(fullText); len(matches) > 1 {
-		info["linkedin"] = "linkedin.com/in/" + matches[1]
-	}
-	
-	// 尝试提取姓名（通常在简历开头）
-	for i, line := range lines {
-		if i > 5 {
-			break
-		}
-		line = strings.TrimSpace(line)
-		// 姓名通常是较短的行，不包含数字和特殊字符
-		if len(line) >= 2 && len(line) <= 20 && 
-		   !strings.Contains(line, "@") && 
-		   !strings.Contains(line, "http") &&
-		   !regexp.MustCompile(`^\d`).MatchString(line) {
-			// 可能是姓名
-			if info["name"] == "" && isLikelyName(line) {
-				info["name"] = line
+
+	// 合并所有在sections之前的行作为个人信息区
+	var personalLines []string
+	if len(lines) > 0 {
+		firstSectionStart := len(lines)
+		for _, section := range sections {
+			if section.start > 0 && section.start < firstSectionStart {
+				firstSectionStart = section.start
 			}
 		}
+		personalLines = lines[:firstSectionStart]
 	}
-	
-	// 提取职位/头衔
-	titleKeywords := []string{"工程师", "开发", "经理", "总监", "架构师", "负责人", "Engineer", "Developer", "Manager"}
-	for _, line := range lines[:min(10, len(lines))] {
-		for _, keyword := range titleKeywords {
-			if strings.Contains(line, keyword) && len(line) < 50 {
-				info["title"] = strings.TrimSpace(line)
+
+	personalText := strings.Join(personalLines, "\n")
+
+	// 提取邮箱
+	if email := emailRe.FindString(personalText); email != "" {
+		info["email"] = email
+	}
+
+	// 提取手机号
+	if phone := phoneRe.FindString(personalText); phone != "" {
+		// 清理手机号中的空白字符
+		cleanPhone := strings.ReplaceAll(phone, " ", "")
+		cleanPhone = strings.ReplaceAll(cleanPhone, "-", "")
+		info["phone"] = cleanPhone
+	}
+
+	// 提取GitHub
+	githubRe := regexp.MustCompile(`(?:github\.com/|github:)\s*([a-zA-Z0-9_-]+)`)
+	if matches := githubRe.FindStringSubmatch(personalText); len(matches) > 1 {
+		info["github"] = "github.com/" + matches[1]
+	}
+
+	// 提取LinkedIn
+	linkedinRe := regexp.MustCompile(`(?:linkedin\.com/in/|linkedin:)\s*([a-zA-Z0-9_-]+)`)
+	if matches := linkedinRe.FindStringSubmatch(personalText); len(matches) > 1 {
+		info["linkedin"] = "linkedin.com/in/" + matches[1]
+	}
+
+	// 提取姓名（更智能的方式）
+	// 姓名通常在第一行，且是2-4个汉字或英文名
+	for i, line := range personalLines {
+		if i > 10 { // 只看前10行
+			break
+		}
+		trimmed := strings.TrimSpace(line)
+		if len(trimmed) < 20 && len(trimmed) >= 2 {
+			// 检查是否是中文姓名（2-4个汉字）
+			if isChineseName(trimmed) {
+				info["name"] = trimmed
+				break
+			}
+			// 检查是否是英文姓名
+			if regexp.MustCompile(`^[A-Z][a-z]+(\s+[A-Z][a-z]+)+$`).MatchString(trimmed) {
+				info["name"] = trimmed
 				break
 			}
 		}
-		if info["title"] != "" {
-			break
+	}
+
+	// 提取职位/头衔
+	for _, line := range personalLines {
+		trimmed := strings.TrimSpace(line)
+		if len(trimmed) > 5 && len(trimmed) < 50 {
+			// 包含职位关键词
+			if positionRe.MatchString(trimmed) {
+				info["title"] = trimmed
+				break
+			}
 		}
 	}
-	
-	// 提取个人简介（通常是前几行中的长文本）
-	for _, line := range lines[:min(20, len(lines))] {
-		line = strings.TrimSpace(line)
-		if len(line) > 50 && len(line) < 300 {
-			// 可能是个人简介
-			info["summary"] = line
-			break
+
+	// 提取个人简介
+	var summaryLines []string
+	for _, line := range personalLines {
+		trimmed := strings.TrimSpace(line)
+		// 简介通常比较长，50-300字符
+		if len(trimmed) > 50 && len(trimmed) < 400 {
+			// 不包含联系方式的特征
+			if !strings.Contains(trimmed, "@") && !regexp.MustCompile(`1[3-9]\d{9}`).MatchString(trimmed) {
+				summaryLines = append(summaryLines, trimmed)
+			}
 		}
 	}
-	
+	if len(summaryLines) > 0 {
+		info["summary"] = strings.Join(summaryLines, " ")
+	}
+
 	return info
 }
 
-// isLikelyName 判断是否可能是姓名
-func isLikelyName(s string) bool {
-	// 中文姓名通常是 2-4 个汉字
-	if regexp.MustCompile(`^[\x{4e00}-\x{9fa5}]{2,4}$`).MatchString(s) {
-		return true
-	}
-	// 英文姓名
-	if regexp.MustCompile(`^[A-Za-z\s\.]+$`).MatchString(s) && len(s) < 30 {
-		return true
-	}
-	return false
-}
-
-// extractEducation 提取教育经历
-func extractEducation(text string) []map[string]interface{} {
+// extractEducationV2 提取教育经历（改进版）
+func extractEducationV2(sectionLines []string, allLines []string) []map[string]interface{} {
 	var education []map[string]interface{}
 
-	// 查找教育相关内容（不使用 lookahead）
-	// 匹配从"教育"到"工作/项目/技能"之前的内容
-	eduPattern := regexp.MustCompile(`(?i)(?:教育|学历|Education|Academic)[\s\S]*?`)
-	endPattern := regexp.MustCompile(`(?i)(?:工作|经验|Experience|Work|项目|Project|技能|Skills)`)
-
-	if match := eduPattern.FindStringIndex(text); len(match) > 0 {
-		start := match[0]
-		end := len(text)
-		// 找到工作/项目/技能等关键词的位置
-		if endMatch := endPattern.FindStringIndex(text[start:]); len(endMatch) > 0 {
-			end = start + endMatch[0]
-		}
-		matchStr := text[start:end]
-
-		// 提取学校
-		schoolRe := regexp.MustCompile(`([\x{4e00}-\x{9fa5}]{2,}(?:大学|学院|学校)|[A-Za-z\s]+(?:University|College|Institute|School))`)
-		schools := schoolRe.FindAllString(matchStr, -1)
-
-		for _, school := range schools {
-			edu := map[string]interface{}{
-				"id":        generateID(),
-				"school":    strings.TrimSpace(school),
-				"degree":    extractDegree(matchStr),
-				"field":     "",
-				"startDate": "",
-				"endDate":   "",
-				"gpa":       "",
-			}
-			education = append(education, edu)
-		}
+	if len(sectionLines) == 0 {
+		return education
 	}
 
-	// 如果没有找到，尝试用通用模式
-	if len(education) == 0 {
-		uniRe := regexp.MustCompile(`([\x{4e00}-\x{9fa5}]{2,}(?:大学|学院))`)
-		universities := uniRe.FindAllString(text, -1)
+	// 按时间或学校来分割条目
+	entries := splitByTimeOrTitle(sectionLines)
 
-		for _, uni := range universities {
-			// 去重
-			found := false
-			for _, e := range education {
-				if e["school"] == uni {
-					found = true
-					break
-				}
+	for _, entry := range entries {
+		entryText := strings.Join(entry, " ")
+
+		edu := map[string]interface{}{
+			"id":        generateID(),
+			"school":    "",
+			"degree":    "",
+			"field":     "",
+			"startDate": "",
+			"endDate":   "",
+			"gpa":       "",
+			"description": "",
+		}
+
+		// 提取学校
+		if schoolMatch := schoolRe.FindString(entryText); schoolMatch != "" {
+			edu["school"] = schoolMatch
+		}
+
+		// 提取学位
+		if degreeMatch := degreeRe.FindString(entryText); degreeMatch != "" {
+			edu["degree"] = degreeMatch
+		}
+
+		// 提取时间
+		timeMatch := timeRangeRe.FindStringSubmatch(entryText)
+		if len(timeMatch) > 1 {
+			timeStr := timeMatch[1]
+			times := strings.Split(timeStr, "-")
+			if len(times) >= 1 {
+				edu["startDate"] = strings.TrimSpace(times[0])
 			}
-			if !found {
-				education = append(education, map[string]interface{}{
-					"id":        generateID(),
-					"school":    uni,
-					"degree":    "",
-					"field":     "",
-					"startDate": "",
-					"endDate":   "",
-				})
+			if len(times) >= 2 {
+				edu["endDate"] = strings.TrimSpace(times[1])
 			}
+		}
+
+		// 提取专业
+		majorRe := regexp.MustCompile(`(?:专业|系)`)
+		if majorMatch := majorRe.FindString(entryText); majorMatch != "" {
+			edu["field"] = majorMatch
+		}
+
+		// 提取GPA
+		gpaRe := regexp.MustCompile(`GPA[:：]?\s*(\d+\.?\d*)`)
+		if gpaMatch := gpaRe.FindStringSubmatch(entryText); len(gpaMatch) > 1 {
+			edu["gpa"] = gpaMatch[1]
+		}
+
+		// 只有当有学校时才添加
+		if edu["school"] != "" {
+			education = append(education, edu)
 		}
 	}
 
 	return education
 }
 
-// extractDegree 提取学位
-func extractDegree(text string) string {
-	degrees := []string{"博士", "硕士", "本科", "学士", "MBA", "PhD", "Master", "Bachelor"}
-	for _, degree := range degrees {
-		if strings.Contains(text, degree) {
-			return degree
-		}
-	}
-	return ""
-}
-
-// extractWorkExperience 提取工作经历
-func extractWorkExperience(text string) []map[string]interface{} {
+// extractWorkExperienceV2 提取工作经历（改进版）
+func extractWorkExperienceV2(sectionLines []string) []map[string]interface{} {
 	var experiences []map[string]interface{}
 
-	// 工作关键词（不使用 lookahead）
-	workPattern := regexp.MustCompile(`(?i)(?:工作|经验|Experience|Work)[\s\S]*?`)
-	endPattern := regexp.MustCompile(`(?i)(?:项目|Project|教育|Education|技能|Skills)`)
+	if len(sectionLines) == 0 {
+		return experiences
+	}
 
-	if match := workPattern.FindStringIndex(text); len(match) > 0 {
-		start := match[0]
-		end := len(text)
-		if endMatch := endPattern.FindStringIndex(text[start:]); len(endMatch) > 0 {
-			end = start + endMatch[0]
+	// 按时间分割条目
+	entries := splitByTimeOrTitle(sectionLines)
+
+	for _, entry := range entries {
+		entryText := strings.Join(entry, " ")
+		entryLines := entry
+
+		exp := map[string]interface{}{
+			"id":           generateID(),
+			"company":      "",
+			"position":     "",
+			"startDate":    "",
+			"endDate":      "",
+			"current":      false,
+			"description":  "",
+			"achievements": []string{},
 		}
-		matchStr := text[start:end]
 
-		// 提取公司名
-		companyRe := regexp.MustCompile(`([\x{4e00}-\x{9fa5}]{2,}(?:公司|集团|科技)|[A-Za-z\s]+(?:Inc|Corp|Ltd|Company|Co\.))`)
-		companies := companyRe.FindAllString(matchStr, -1)
+		// 提取公司
+		if companyMatch := companyRe.FindString(entryText); companyMatch != "" {
+			exp["company"] = companyMatch
+		}
 
-		for _, company := range companies {
-			exp := map[string]interface{}{
-				"id":           generateID(),
-				"company":      strings.TrimSpace(company),
-				"position":     "",
-				"startDate":    "",
-				"endDate":      "",
-				"current":      false,
-				"description":  "",
-				"achievements": []string{},
+		// 提取职位
+		if positionMatch := positionRe.FindString(entryText); positionMatch != "" {
+			exp["position"] = positionMatch
+		}
+
+		// 提取时间
+		timeMatch := timeRangeRe.FindStringSubmatch(entryText)
+		if len(timeMatch) > 1 {
+			timeStr := timeMatch[1]
+			times := strings.Split(timeStr, "-")
+			if len(times) >= 1 {
+				exp["startDate"] = strings.TrimSpace(times[0])
 			}
+			if len(times) >= 2 {
+				endTime := strings.TrimSpace(times[1])
+				if endTime == "至今" || endTime == "现在" || endTime == "current" || endTime == "present" {
+					exp["current"] = true
+					exp["endDate"] = ""
+				} else {
+					exp["endDate"] = endTime
+				}
+			}
+		}
+
+		// 提取描述（通常是时间/公司/职位之后的内容）
+		// 收集所有非时间、非公司、非职位的行作为描述
+		var descLines []string
+		for _, line := range entryLines {
+			trimmed := strings.TrimSpace(line)
+			if trimmed == "" {
+				continue
+			}
+			// 跳过时间、公司、职位行
+			if timeRangeRe.MatchString(trimmed) || companyRe.MatchString(trimmed) || positionRe.MatchString(trimmed) {
+				continue
+			}
+			// 跳过太短或太长的行
+			if len(trimmed) > 10 && len(trimmed) < 500 {
+				descLines = append(descLines, trimmed)
+			}
+		}
+		if len(descLines) > 0 {
+			exp["description"] = strings.Join(descLines, "\n")
+		}
+
+		// 只有当有公司时才添加
+		if exp["company"] != "" {
 			experiences = append(experiences, exp)
 		}
 	}
@@ -343,95 +517,256 @@ func extractWorkExperience(text string) []map[string]interface{} {
 	return experiences
 }
 
-// extractProjects 提取项目经验
-func extractProjects(text string) []map[string]interface{} {
+// extractProjectsV2 提取项目经验（改进版）
+func extractProjectsV2(sectionLines []string) []map[string]interface{} {
 	var projects []map[string]interface{}
 
-	// 项目关键词（不使用 lookahead）
-	projPattern := regexp.MustCompile(`(?i)(?:项目|Project)[\s\S]*?`)
-	endPattern := regexp.MustCompile(`(?i)(?:技能|Skills|工作|Experience|教育|Education)`)
+	if len(sectionLines) == 0 {
+		return projects
+	}
 
-	if match := projPattern.FindStringIndex(text); len(match) > 0 {
-		start := match[0]
-		end := len(text)
-		if endMatch := endPattern.FindStringIndex(text[start:]); len(endMatch) > 0 {
-			end = start + endMatch[0]
+	// 按条目分割（通常以数字序号或项目标题开始）
+	entries := splitByTimeOrTitle(sectionLines)
+
+	for _, entry := range entries {
+		entryText := strings.Join(entry, " ")
+		entryLines := entry
+
+		proj := map[string]interface{}{
+			"id":           generateID(),
+			"name":         "",
+			"role":         "",
+			"startDate":    "",
+			"endDate":      "",
+			"current":      false,
+			"description":  "",
+			"technologies": []string{},
+			"link":         "",
 		}
-		matchStr := text[start:end]
 
-		// 简单提取项目名称（基于数字列表）
-		projRe := regexp.MustCompile(`(?:\d+[\.、]|\-|\*)\s*([^\n]{2,30})`)
-		matches := projRe.FindAllStringSubmatch(matchStr, -1)
-
-		for _, m := range matches {
-			if len(m) > 1 {
-				proj := map[string]interface{}{
-					"id":           generateID(),
-					"name":         strings.TrimSpace(m[1]),
-					"role":         "",
-					"startDate":    "",
-					"endDate":      "",
-					"current":      false,
-					"description":  "",
-					"technologies": []string{},
-					"link":         "",
+		// 提取项目名称
+		// 项目名通常是比较独特的名称，2-20个字符
+		for _, line := range entryLines {
+			trimmed := strings.TrimSpace(line)
+			// 跳过时间
+			if timeRangeRe.MatchString(trimmed) {
+				continue
+			}
+			// 项目名通常不以列表符号开头
+			if len(trimmed) >= 2 && len(trimmed) <= 30 {
+				// 检查是否是角色
+				if positionRe.MatchString(trimmed) {
+					proj["role"] = trimmed
+					continue
 				}
-				projects = append(projects, proj)
+				// 否则可能是项目名
+				if proj["name"] == "" && !strings.HasPrefix(trimmed, "-") && !strings.HasPrefix(trimmed, "*") {
+					// 过滤掉明显的描述性文字
+					if !regexp.MustCompile(`^[\d.、．]+$`).MatchString(trimmed) {
+						proj["name"] = trimmed
+					}
+				}
 			}
 		}
+
+		// 提取时间
+		timeMatch := timeRangeRe.FindStringSubmatch(entryText)
+		if len(timeMatch) > 1 {
+			timeStr := timeMatch[1]
+			times := strings.Split(timeStr, "-")
+			if len(times) >= 1 {
+				proj["startDate"] = strings.TrimSpace(times[0])
+			}
+			if len(times) >= 2 {
+				endTime := strings.TrimSpace(times[1])
+				if endTime == "至今" || endTime == "现在" {
+					proj["current"] = true
+				} else {
+					proj["endDate"] = endTime
+				}
+			}
+		}
+
+		// 提取技术栈
+		techMatches := techRe.FindAllString(entryText, -1)
+		var techs []string
+		for _, t := range techMatches {
+			// 过滤掉常见非技术词汇
+			if !isCommonWord(t) && len(t) >= 2 {
+				techs = append(techs, t)
+			}
+		}
+		// 去重
+		seen := make(map[string]bool)
+		var uniqueTechs []string
+		for _, t := range techs {
+			if !seen[t] {
+				seen[t] = true
+				uniqueTechs = append(uniqueTechs, t)
+			}
+		}
+		proj["technologies"] = uniqueTechs
+
+		// 提取描述
+		var descLines []string
+		for _, line := range entryLines {
+			trimmed := strings.TrimSpace(line)
+			if trimmed == "" || len(trimmed) < 10 {
+				continue
+			}
+			// 跳过时间、项目名、角色
+			if timeRangeRe.MatchString(trimmed) || trimmed == proj["name"] {
+				continue
+			}
+			descLines = append(descLines, trimmed)
+		}
+		if len(descLines) > 0 {
+			proj["description"] = strings.Join(descLines, "\n")
+		}
+
+		// 只有当有项目名时才添加
+		if proj["name"] != "" {
+			projects = append(projects, proj)
+		}
 	}
-	
+
 	return projects
 }
 
-// extractSkills 提取技能
-func extractSkills(text string) []map[string]interface{} {
+// extractSkillsV2 提取技能（改进版）
+func extractSkillsV2(sectionLines []string) []map[string]interface{} {
 	var skills []map[string]interface{}
-	
-	// 常见技术关键词
-	techKeywords := []string{
-		"Java", "Python", "Go", "Golang", "JavaScript", "TypeScript", "C++", "C#", "PHP", "Ruby",
-		"React", "Vue", "Angular", "Node.js", "Next.js", "Express", "Django", "Spring",
-		"MySQL", "PostgreSQL", "MongoDB", "Redis", "Elasticsearch",
-		"Docker", "Kubernetes", "K8s", "AWS", "阿里云", "腾讯云",
-		"Git", "Linux", "Nginx", "Kafka", "RabbitMQ",
+
+	if len(sectionLines) == 0 {
+		return skills
 	}
-	
+
+	// 技术关键词
+	techKeywords := []string{
+		"Java", "Python", "Go", "Golang", "JavaScript", "TypeScript", "C++", "C#", "PHP", "Ruby", "Swift", "Kotlin",
+		"React", "Vue", "Angular", "Node.js", "Node", "Next.js", "Express", "Django", "Flask", "Spring", "Spring Boot",
+		"MySQL", "PostgreSQL", "MongoDB", "Redis", "Elasticsearch", "SQLite", "Oracle",
+		"Docker", "Kubernetes", "K8s", "AWS", "Azure", "GCP", "阿里云", "腾讯云", "华为云",
+		"Git", "GitHub", "GitLab", "Linux", "Nginx", "Apache", "Kafka", "RabbitMQ", "Zookeeper",
+		"TensorFlow", "PyTorch", "Pandas", "NumPy", "Scikit-learn", "Keras",
+		"HTML", "CSS", "SASS", "LESS", "Tailwind", "Bootstrap",
+		"REST", "GraphQL", "gRPC", "WebSocket", "TCP/IP", "HTTP", "DNS",
+		"敏捷", "Scrum", "Kanban", "DevOps", "CI/CD", "TDD", "BDD",
+	}
+
+	skillText := strings.Join(sectionLines, " ")
 	foundSkills := make(map[string]bool)
-	
+
 	for _, tech := range techKeywords {
-		if strings.Contains(text, tech) && !foundSkills[tech] {
+		// 使用单词边界匹配
+		techRe := regexp.MustCompile(`\b` + regexp.QuoteMeta(tech) + `\b`)
+		if techRe.MatchString(skillText) {
 			foundSkills[tech] = true
 		}
 	}
-	
+
 	if len(foundSkills) > 0 {
 		skillItems := make([]string, 0, len(foundSkills))
 		for skill := range foundSkills {
 			skillItems = append(skillItems, skill)
 		}
-		
+
 		skills = append(skills, map[string]interface{}{
 			"id":       generateID(),
-			"category": "技术栈",
+			"category": "技能",
 			"items":    skillItems,
 		})
 	}
-	
+
 	return skills
+}
+
+// splitByTimeOrTitle 按时间或标题分割条目
+func splitByTimeOrTitle(lines []string) [][]string {
+	var entries [][]string
+	var currentEntry []string
+
+	for _, line := range lines {
+		trimmed := strings.TrimSpace(line)
+
+		// 检测是否是新的条目开始
+		isNewEntry := false
+
+		// 1. 以时间开头（新条目）
+		if timeRangeRe.MatchString(trimmed) || singleTimeRe.MatchString(trimmed) {
+			// 如果当前条目为空，继续
+			if len(currentEntry) > 0 {
+				// 检查时间是否在条目中间（比如描述中提到时间）
+				isNewEntry = true
+			}
+		}
+
+		// 2. 以数字序号开头
+		if regexp.MustCompile(`^\d+[.、．]`).MatchString(trimmed) {
+			isNewEntry = true
+		}
+
+		// 3. 以列表符号开头
+		if strings.HasPrefix(trimmed, "-") || strings.HasPrefix(trimmed, "•") || strings.HasPrefix(trimmed, "*") || strings.HasPrefix(trimmed, "·") {
+			isNewEntry = true
+		}
+
+		if isNewEntry && len(currentEntry) > 0 {
+			entries = append(entries, currentEntry)
+			currentEntry = []string{}
+		}
+
+		currentEntry = append(currentEntry, trimmed)
+	}
+
+	// 添加最后一个条目
+	if len(currentEntry) > 0 {
+		entries = append(entries, currentEntry)
+	}
+
+	// 如果没有分割出条目，把所有行作为一个条目
+	if len(entries) == 0 && len(lines) > 0 {
+		entries = append(entries, lines)
+	}
+
+	return entries
+}
+
+// isCommonWord 判断是否为常见非技术词汇
+func isCommonWord(word string) bool {
+	commonWords := map[string]bool{
+		"the": true, "and": true, "for": true, "are": true, "but": true, "not": true,
+		"you": true, "all": true, "can": true, "had": true, "her": true, "was": true,
+		"one": true, "our": true, "out": true, "day": true, "get": true, "has": true,
+		"him": true, "his": true, "how": true, "its": true, "may": true, "new": true,
+		"now": true, "old": true, "see": true, "two": true, "way": true, "who": true,
+		"boy": true, "did": true, "she": true, "use": true, "your": true, "each": true,
+		"this": true, "that": true, "with": true, "from": true, "they": true, "will": true,
+		"been": true, "have": true, "more": true, "when": true, "year": true, "than": true,
+		// 中文常见词
+		"公司": true, "工作": true, "负责": true, "管理": true, "项目": true, "经验": true,
+		"开发": true, "设计": true, "实现": true, "优化": true, "维护": true, "参与": true,
+		"主要": true, "完成": true, "获得": true, "提升": true, "进行": true, "包括": true,
+	}
+	return commonWords[strings.ToLower(word)]
+}
+
+// isChineseName 判断字符串是否是中文姓名（2-4个汉字）
+func isChineseName(s string) bool {
+	if len(s) < 2 || len(s) > 4 {
+		return false
+	}
+	for _, r := range s {
+		if r < 0x4e00 || r > 0x9fa5 {
+			return false
+		}
+	}
+	return true
 }
 
 // generateID 生成简单 ID
 func generateID() string {
 	return fmt.Sprintf("%d", time.Now().UnixNano())
-}
-
-// min 返回较小值
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
 }
 
 // ConvertToResumeData 将解析结果转换为前端使用的 ResumeData 格式

@@ -233,7 +233,7 @@ export default function ResumeListPage() {
   const loadResumes = async () => {
     try {
       const res = await resumeApi.getResumes();
-      setResumes(res.data.list);
+      setResumes(res.data.list || []);
     } catch (error) {
       console.error('Failed to load resumes:', error);
     } finally {

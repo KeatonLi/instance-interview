@@ -76,6 +76,23 @@ const EditorPage: React.FC = () => {
   const [saveError, setSaveError] = useState('');
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // 确保数据有效的包装函数
+  const safeSetResumeData = (data: ResumeData | ((prev: ResumeData) => ResumeData)) => {
+    setResumeData(prev => {
+      const next = typeof data === 'function' ? (data as (prev: ResumeData) => ResumeData)(prev) : data;
+      return {
+        ...next,
+        workExperience: next.workExperience || [],
+        projects: next.projects || [],
+        education: next.education || [],
+        skills: next.skills || [],
+        awards: next.awards || [],
+        languages: next.languages || [],
+        personalInfo: next.personalInfo || defaultResumeData.personalInfo,
+      };
+    });
+  };
+
   useEffect(() => {
     if (id) {
       loadResume(parseInt(id));
@@ -107,7 +124,7 @@ const EditorPage: React.FC = () => {
       const resume = res.data;
       setResumeTitle(resume.title || '我的简历');
       setThemeId(resume.theme_id || 0);
-      setResumeData(parseResumeData(resume));
+      safeSetResumeData(parseResumeData(resume));
       setLastSaved(new Date(resume.updated_at || resume.created_at));
       setSaveError('');
     } catch (error) {
@@ -189,7 +206,7 @@ const EditorPage: React.FC = () => {
   };
 
   const handleDataChange = useCallback((newData: ResumeData | ((prev: ResumeData) => ResumeData)) => {
-    setResumeData(newData);
+    safeSetResumeData(newData);
     setHasChanges(true);
   }, []);
 
@@ -208,13 +225,13 @@ const EditorPage: React.FC = () => {
   }, [id]);
 
   const loadSampleData = () => {
-    setResumeData(sampleResumeData);
+    safeSetResumeData(sampleResumeData);
     setHasChanges(true);
   };
 
   const resetData = () => {
     if (confirm('确定要清空所有内容吗？此操作不可撤销。')) {
-      setResumeData(defaultResumeData);
+      safeSetResumeData(defaultResumeData);
       setHasChanges(true);
     }
   };
