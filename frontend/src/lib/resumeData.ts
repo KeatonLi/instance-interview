@@ -71,6 +71,28 @@ export const parseResumeData = (resume: SerializedResumeLike | null | undefined)
     data.personalInfo = defaultResumeData.personalInfo;
   }
 
+  // 确保嵌套字段也是数组，防止 null 错误
+  data.workExperience.forEach(exp => {
+    if (!exp || typeof exp !== 'object') return;
+    if (!Array.isArray((exp as unknown as Record<string, unknown>).achievements)) {
+      (exp as unknown as Record<string, unknown>).achievements = [];
+    }
+  });
+
+  data.projects.forEach(p => {
+    if (!p || typeof p !== 'object') return;
+    if (!Array.isArray((p as unknown as Record<string, unknown>).technologies)) {
+      (p as unknown as Record<string, unknown>).technologies = [];
+    }
+  });
+
+  data.skills.forEach(s => {
+    if (!s || typeof s !== 'object') return;
+    if (!Array.isArray((s as unknown as Record<string, unknown>).items)) {
+      (s as unknown as Record<string, unknown>).items = [];
+    }
+  });
+
   return data as ResumeData;
 };
 

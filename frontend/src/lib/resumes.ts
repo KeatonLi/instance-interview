@@ -9,6 +9,7 @@ export interface Resume {
   theme_id: number;
   resume_type: string;
   status: string;
+  share_token?: string;
   personal_info: string;
   education: string;
   work_experience: string;
@@ -138,9 +139,21 @@ async function uploadFile<T>(endpoint: string, file: File): Promise<T> {
   return data;
 }
 
+export interface ResumeListParams {
+  search?: string;
+  theme_id?: number;
+  sort?: 'updated_at_desc' | 'updated_at_asc' | 'created_at_desc' | 'created_at_asc';
+}
+
 export const resumeApi = {
-  getResumes: () =>
-    api.get<ResumeListResponse>('/resumes'),
+  getResumes: (params?: ResumeListParams) => {
+    const queryParams = new URLSearchParams();
+    if (params?.search) queryParams.set('search', params.search);
+    if (params?.theme_id !== undefined) queryParams.set('theme_id', String(params.theme_id));
+    if (params?.sort) queryParams.set('sort', params.sort);
+    const query = queryParams.toString();
+    return api.get<ResumeListResponse>(`/resumes${query ? '?' + query : ''}`);
+  },
 
   getResume: (id: number) =>
     api.get<ResumeResponse>(`/resumes/${id}`),
@@ -173,4 +186,16 @@ export const resumeApi = {
   // PDF 导入简历
   importResume: (file: File) =>
     uploadFile<ImportResumeResponse>('/resumes/import', file),
+
+  // 启用分享
+  enableShare: (id: number) =>
+    api.post<{ code: number; data: { share_token: string; share_url: string } }>(`/resumes/${id}/share`),
+
+  // 禁用分享
+  disableShare: (id: number) =>
+    api.delete<{ code: number; message: string }>(`/resumes/${id}/share`),
+
+  // 获取分享的简历（公开）
+  getSharedResume: (token: string) =>
+    api.get<ResumeResponse>(`/shared/${token}`),
 };

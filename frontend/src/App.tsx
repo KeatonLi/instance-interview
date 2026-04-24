@@ -5,6 +5,7 @@ import LoginPage from '@/pages/LoginPage';
 import RegisterPage from '@/pages/RegisterPage';
 import ResumeListPage from '@/pages/ResumeListPage';
 import EditorPage from '@/pages/EditorPage';
+import SharedResumePage from '@/pages/SharedResumePage';
 import './App.css';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -31,21 +32,22 @@ function AppRoutes() {
       <Route path="/" element={<HomePage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
-      <Route 
-        path="/resumes" 
+      <Route path="/shared/:token" element={<SharedResumePage />} />
+      <Route
+        path="/resumes"
         element={
           <ProtectedRoute>
             <ResumeListPage />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/editor/:id?" 
+      <Route
+        path="/editor/:id?"
         element={
           <ProtectedRoute>
             <EditorPage />
           </ProtectedRoute>
-        } 
+        }
       />
     </Routes>
   );
