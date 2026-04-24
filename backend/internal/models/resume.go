@@ -1,6 +1,8 @@
 package models
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"time"
 
 	"resume-ai-backend/internal/config"
@@ -41,6 +43,8 @@ type Resume struct {
 	Skills         string         `json:"skills" gorm:"type:json"`               // JSON: 技能数组
 	Awards         string         `json:"awards" gorm:"type:json"`               // JSON: 奖项数组
 	Languages      string         `json:"languages" gorm:"type:json"`            // JSON: 语言能力数组
+	ShareToken     *string        `json:"share_token" gorm:"size:64;index"`      // 分享令牌
+	ShareExpiresAt *time.Time    `json:"share_expires_at" gorm:"size:64"`        // 分享过期时间
 	CreatedAt      time.Time      `json:"created_at"`
 	UpdatedAt      time.Time      `json:"updated_at"`
 	DeletedAt      gorm.DeletedAt `json:"-" gorm:"index"`
@@ -181,10 +185,73 @@ func GetResumeByID(id uint) (*Resume, error) {
 	return &resume, nil
 }
 
-func GetResumesByUserID(userID uint) ([]Resume, error) {
+// GetResumesByUserID 获取用户的简历列表，支持搜索、过滤、排序
+func GetResumesByUserID(userID uint, search string, themeID *int, sort string) ([]Resume, error) {
 	var resumes []Resume
-	err := db.Where("user_id = ?", userID).Order("is_default DESC, updated_at DESC").Find(&resumes).Error
+	query := db.Where("user_id = ?", userID)
+
+	// 搜索：按标题模糊搜索
+	if search != "" {
+		query = query.Where("title LIKE ?", "%"+search+"%")
+	}
+
+	// 按模板过滤
+	if themeID != nil {
+		query = query.Where("theme_id = ?", *themeID)
+	}
+
+	// 排序
+	switch sort {
+	case "created_at_asc":
+		query = query.Order("created_at ASC")
+	case "created_at_desc":
+		query = query.Order("created_at DESC")
+	case "updated_at_asc":
+		query = query.Order("updated_at ASC")
+	default: // "updated_at_desc" 或默认
+		query = query.Order("is_default DESC, updated_at DESC")
+	}
+
+	err := query.Find(&resumes).Error
 	return resumes, err
+}
+
+// GenerateShareToken 生成分享令牌
+func (r *Resume) GenerateShareToken() error {
+	tokenBytes := make([]byte, 32)
+	if _, err := rand.Read(tokenBytes); err != nil {
+		return err
+	}
+	token := hex.EncodeToString(tokenBytes)
+	r.ShareToken = &token
+	return nil
+}
+
+// EnableShare 启用分享
+func (r *Resume) EnableShare() error {
+	if r.ShareToken == nil || *r.ShareToken == "" {
+		if err := r.GenerateShareToken(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// DisableShare 禁用分享
+func (r *Resume) DisableShare() error {
+	r.ShareToken = nil
+	r.ShareExpiresAt = nil
+	return nil
+}
+
+// GetResumeByShareToken 通过分享令牌获取简历
+func GetResumeByShareToken(token string) (*Resume, error) {
+	var resume Resume
+	err := db.Where("share_token = ?", token).First(&resume).Error
+	if err != nil {
+		return nil, err
+	}
+	return &resume, nil
 }
 
 func GetDefaultResumeByUserID(userID uint) (*Resume, error) {

@@ -44,7 +44,18 @@ func GetResumes(c *gin.Context) {
 		return
 	}
 
-	resumes, err := models.GetResumesByUserID(userID)
+	// 获取查询参数
+	search := c.Query("search")
+	sort := c.DefaultQuery("sort", "updated_at_desc")
+
+	var themeID *int
+	if themeIDStr := c.Query("theme_id"); themeIDStr != "" {
+		if tid, err := strconv.Atoi(themeIDStr); err == nil {
+			themeID = &tid
+		}
+	}
+
+	resumes, err := models.GetResumesByUserID(userID, search, themeID, sort)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -355,6 +366,116 @@ func ImportResume(c *gin.Context) {
 			"resume":   resume,
 			"raw_text": parsedResume.RawText,
 			"parsed":   resumeData,
+		},
+	})
+}
+
+// EnableShare 启用简历分享
+func EnableShare(c *gin.Context) {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
+		return
+	}
+
+	resume, err := models.GetResumeByID(uint(id))
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "resume not found"})
+		return
+	}
+
+	// 验证所有权
+	userID, ok := GetCurrentUserID(c)
+	if !ok || resume.UserID != userID {
+		c.JSON(http.StatusForbidden, gin.H{"error": "forbidden"})
+		return
+	}
+
+	if err := resume.EnableShare(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	if err := models.UpdateResume(resume); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"code": 0,
+		"data": gin.H{
+			"share_token": *resume.ShareToken,
+			"share_url":  "/shared/" + *resume.ShareToken,
+		},
+	})
+}
+
+// DisableShare 禁用简历分享
+func DisableShare(c *gin.Context) {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
+		return
+	}
+
+	resume, err := models.GetResumeByID(uint(id))
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "resume not found"})
+		return
+	}
+
+	// 验证所有权
+	userID, ok := GetCurrentUserID(c)
+	if !ok || resume.UserID != userID {
+		c.JSON(http.StatusForbidden, gin.H{"error": "forbidden"})
+		return
+	}
+
+	if err := resume.DisableShare(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	if err := models.UpdateResume(resume); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"code":    0,
+		"message": "分享已取消",
+	})
+}
+
+// GetSharedResume 获取分享的简历（公开接口，不需要认证）
+func GetSharedResume(c *gin.Context) {
+	token := c.Param("token")
+	if token == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid token"})
+		return
+	}
+
+	resume, err := models.GetResumeByShareToken(token)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "resume not found or sharing disabled"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"code": 0,
+		"data": gin.H{
+			"id":              resume.ID,
+			"title":           resume.Title,
+			"theme_id":        resume.ThemeID,
+			"resume_type":     resume.ResumeType,
+			"status":          resume.Status,
+			"personal_info":   resume.PersonalInfo,
+			"education":       resume.Education,
+			"work_experience": resume.WorkExperience,
+			"projects":        resume.Projects,
+			"skills":          resume.Skills,
+			"awards":          resume.Awards,
+			"languages":       resume.Languages,
 		},
 	})
 }

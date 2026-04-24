@@ -43,6 +43,9 @@ func main() {
 			auth.POST("/guest", authHandler.GuestLogin) // 游客登录
 		}
 
+		// 公开接口 - 分享简历（无需认证）
+		api.GET("/shared/:token", handlers.GetSharedResume)
+
 		// 需要认证的接口
 		protected := api.Group("")
 		protected.Use(middleware.AuthRequired())
@@ -64,6 +67,8 @@ func main() {
 				resumes.POST("/import", handlers.ImportResume) // PDF 导入简历
 				resumes.PUT("/:id", handlers.UpdateResume)
 				resumes.DELETE("/:id", handlers.DeleteResume)
+				resumes.POST("/:id/share", handlers.EnableShare)   // 启用分享
+				resumes.DELETE("/:id/share", handlers.DisableShare) // 取消分享
 			}
 		}
 	}
