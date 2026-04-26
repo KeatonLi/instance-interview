@@ -30,30 +30,6 @@ from middleware.auth import auth_required
 router = APIRouter(prefix="/api/v1/resumes", tags=["简历"])
 
 
-def _resume_to_dict(resume) -> dict:
-    """将 Resume 模型转换为响应字典"""
-    return {
-        "id": resume.id,
-        "user_id": resume.user_id,
-        "title": resume.title,
-        "theme_id": resume.theme_id,
-        "resume_type": resume.resume_type,
-        "is_default": resume.is_default,
-        "status": resume.status,
-        "personal_info": resume.personal_info if isinstance(resume.personal_info, dict) else json.loads(resume.personal_info or "{}"),
-        "education": resume.education if isinstance(resume.education, list) else json.loads(resume.education or "[]"),
-        "work_experience": resume.work_experience if isinstance(resume.work_experience, list) else json.loads(resume.work_experience or "[]"),
-        "projects": resume.projects if isinstance(resume.projects, list) else json.loads(resume.projects or "[]"),
-        "skills": resume.skills if isinstance(resume.skills, list) else json.loads(resume.skills or "[]"),
-        "awards": resume.awards if isinstance(resume.awards, list) else json.loads(resume.awards or "[]"),
-        "languages": resume.languages if isinstance(resume.languages, list) else json.loads(resume.languages or "[]"),
-        "share_token": resume.share_token,
-        "share_expires_at": resume.share_expires_at.isoformat() if resume.share_expires_at else None,
-        "created_at": resume.created_at.isoformat() if resume.created_at else None,
-        "updated_at": resume.updated_at.isoformat() if resume.updated_at else None,
-    }
-
-
 @router.get("", response_model=ResumeListResponse)
 async def list_resumes(
     request: Request,

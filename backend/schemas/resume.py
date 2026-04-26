@@ -42,7 +42,7 @@ class ResumeUpdateRequest(BaseModel):
 # ============ 响应模型 ============
 
 class ResumeBase(BaseModel):
-    """简历基础字段"""
+    """简历基础字段 - 与 Go 版本一致，返回 JSON 字符串"""
     id: int
     user_id: int
     title: str
@@ -50,17 +50,18 @@ class ResumeBase(BaseModel):
     resume_type: str = "full"
     is_default: bool = False
     status: str = "draft"
-    personal_info: Any = {}
-    education: Any = []
-    work_experience: Any = []
-    projects: Any = []
-    skills: Any = []
-    awards: Any = []
-    languages: Any = []
+    # JSON 字符串字段，与 Go 版本一致
+    personal_info: str = "{}"
+    education: str = "[]"
+    work_experience: str = "[]"
+    projects: str = "[]"
+    skills: str = "[]"
+    awards: str = "[]"
+    languages: str = "[]"
     share_token: Optional[str] = None
-    share_expires_at: Optional[datetime] = None
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
+    share_expires_at: Optional[str] = None  # ISO 格式字符串
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
 
     class Config:
         from_attributes = True

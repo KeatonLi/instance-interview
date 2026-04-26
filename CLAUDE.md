@@ -69,9 +69,9 @@ python3 main.py
 ### 部署
 **重要**: 每次修改代码后，**必须运行部署脚本**将改动发布到服务器。
 
-**Windows 用户**: 使用 WSL 运行部署脚本：
+**必须在 WSL 中执行部署脚本：**
 ```bash
-wsl ./deploy.sh
+wsl bash -c "cd /mnt/d/programs/instance-interview && ./deploy.sh"
 ```
 
 部署脚本会自动：构建前后端 → 上传文件 → 重启服务

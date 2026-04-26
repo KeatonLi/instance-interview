@@ -51,26 +51,24 @@ coverage/
 .temp/
 *.tsbuildinfo
 
-# Go build outputs
-# Binary files (compiled executables)
-/server
-backend/server
-*.exe
-*.exe~
-*.dll
-*.so
-*.dylib
+# Python
+__pycache__/
+*.py[cod]
+*.pyc
+.venv/
+venv/
+ENV/
+.pytest_cache/
 
-# Go workspace file
-go.work
-go.work.sum
-
-# Go vendor directory (if using)
-vendor/
-
-# Go test binary
-*.test
-
-# Go coverage output
-*.out
-coverage.out
+# Helper scripts and temp files
+*.ps1
+*.bat
+nul
+api_test.py
+test_tps.py
+check_py.py
+find_div.py
+temp_find_div.py
+backend-python-plan.md
+backend-python-plan.txt
+PLAN.md
