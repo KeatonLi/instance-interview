@@ -35,7 +35,7 @@ SCP_COMMON_OPTS=(
 )
 
 check_dependencies() {
-  for cmd in ssh scp go npm; do
+  for cmd in ssh scp npm; do
     if ! command -v "$cmd" >/dev/null 2>&1; then
       echo -e "${RED}错误: 未找到依赖命令 $cmd${NC}"
       exit 1
@@ -116,31 +116,6 @@ run_remote_script() {
 build_project() {
   echo -e "${BLUE}开始构建项目...${NC}"
 
-  echo -e "${YELLOW}设置 Go 代理...${NC}"
-  export GOPROXY=https://goproxy.cn,direct
-  export GO111MODULE=on
-
-  echo -e "${YELLOW}构建后端 (Go)...${NC}"
-  (
-    cd backend
-    rm -f server
-
-    if [[ "${OSTYPE:-}" == "linux-gnu"* ]]; then
-      go build -o server main.go
-    else
-      echo -e "${YELLOW}检测到非 Linux 系统，使用交叉编译...${NC}"
-      GOOS=linux GOARCH=amd64 go build -o server main.go
-    fi
-
-    if [ ! -f "server" ]; then
-      echo -e "${RED}错误: 后端构建失败，server 二进制文件不存在${NC}"
-      exit 1
-    fi
-
-    chmod +x server
-  )
-  echo -e "${GREEN}后端构建完成${NC}"
-
   echo -e "${YELLOW}构建前端...${NC}"
   (
     cd frontend
@@ -151,6 +126,18 @@ build_project() {
       echo -e "${RED}错误: 前端构建失败，dist 目录不存在${NC}"
       exit 1
     fi
+  )
+  echo -e "${GREEN}前端构建完成${NC}"
+
+  echo -e "${YELLOW}检查 Python 后端依赖...${NC}"
+  (
+    cd backend
+    if [ ! -f "requirements.txt" ]; then
+      echo -e "${RED}错误: requirements.txt 不存在${NC}"
+      exit 1
+    fi
+    # 本地验证依赖可安装（不在此处安装，服务器上安装）
+    echo -e "${GREEN}Python 后端代码检查完成${NC}"
   )
 
   echo -e "${GREEN}项目构建完成${NC}"
@@ -171,7 +158,7 @@ mkdir -p "$REMOTE_DIR"
 cd "$REMOTE_DIR"
 
 echo "=== 当前进程状态 ==="
-ps aux | grep -E "(instant-interview|serve.*frontend-dist|./server)" | grep -v grep || echo "未找到相关进程"
+ps aux | grep -E "(uvicorn|serve.*frontend-dist|main:app)" | grep -v grep || echo "未找到相关进程"
 
 echo "=== 停止现有服务 ==="
 if [ -f "backend.pid" ]; then
@@ -195,7 +182,7 @@ if [ -f "frontend.pid" ]; then
 fi
 
 echo "=== 清理残留进程 ==="
-REMAINING_PROCESSES=$(ps aux | grep -E "./server" | grep -v grep | awk '{print $2}')
+REMAINING_PROCESSES=$(ps aux | grep -E "uvicorn|main:app" | grep -v grep | awk '{print $2}')
 if [ -n "$REMAINING_PROCESSES" ]; then
   for pid in $REMAINING_PROCESSES; do
     kill "$pid" 2>/dev/null || true
@@ -223,10 +210,10 @@ upload_files() {
   echo -e "${BLUE}上传文件到服务器...${NC}"
 
   echo -e "${YELLOW}清理服务器上的旧文件...${NC}"
-  remote_ssh "cd '$REMOTE_DIR' && rm -f server backend.pid frontend.pid && rm -rf frontend-dist && echo '旧文件清理完成'"
+  remote_ssh "cd '$REMOTE_DIR' && rm -f server backend.pid frontend.pid && rm -rf frontend-dist backend && echo '旧文件清理完成'"
 
-  echo -e "${YELLOW}上传后端文件...${NC}"
-  remote_scp "backend/server" "$SERVER_USER@$SERVER_HOST:$REMOTE_DIR/server"
+  echo -e "${YELLOW}上传 Python 后端文件...${NC}"
+  remote_scp -r "backend" "$SERVER_USER@$SERVER_HOST:$REMOTE_DIR/"
 
   echo -e "${YELLOW}上传前端文件...${NC}"
   remote_scp -r "frontend/dist" "$SERVER_USER@$SERVER_HOST:$REMOTE_DIR/frontend-dist"
@@ -260,10 +247,15 @@ fi
 echo "检查上传的文件..."
 ls -la
 
-[ -f "server" ] || { echo "错误: server 二进制文件不存在"; exit 1; }
+[ -d "backend" ] || { echo "错误: backend 目录不存在"; exit 1; }
 [ -d "frontend-dist" ] || { echo "错误: frontend-dist 目录不存在"; exit 1; }
 
-chmod +x server
+# 安装 Python 依赖
+echo "安装 Python 后端依赖..."
+cd backend
+pip3 install -r requirements.txt --quiet
+cd ..
+
 which serve >/dev/null 2>&1 || npm install -g serve
 
 echo "启动后端服务..."
@@ -281,8 +273,10 @@ echo "  RESUME_DB_USER=$RESUME_DB_USER"
 echo "  RESUME_DB_NAME=$RESUME_DB_NAME"
 echo "  RESUME_PORT=$RESUME_PORT"
 
-nohup ./server > backend.log 2>&1 &
+cd backend
+nohup python3 -m uvicorn main:app --host 0.0.0.0 --port 8082 > ../backend.log 2>&1 &
 BACKEND_PID=$!
+cd ..
 echo "$BACKEND_PID" > backend.pid
 echo "后端服务已启动，PID: $BACKEND_PID"
 
@@ -334,7 +328,7 @@ if [ "$FRONTEND_OK" -ne 1 ]; then
 fi
 
 echo "最终进程状态:"
-ps aux | grep -E "(server|serve)" | grep -v grep || echo "未找到匹配的进程"
+ps aux | grep -E "(uvicorn|serve)" | grep -v grep || echo "未找到匹配的进程"
 
 echo "监听端口:"
 netstat -tlnp | grep -E ":8082|:3001" || ss -tlnp | grep -E ":8082|:3001" || echo "端口检查不可用"

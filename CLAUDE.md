@@ -8,9 +8,21 @@
 
 ## 项目概述
 
-简历大师是一款智能简历助手，帮助用户创建、编辑、导出专业简历。项目包含：
+**简历大师**是一款智能简历助手，帮助用户创建、编辑、导出专业简历。
+
+### 核心功能
+- **简历管理**：创建、编辑、删除、预览简历
+- **多模板**：提供5种不同风格的简历模板
+- **PDF导出**：一键生成专业PDF简历
+- **PDF导入**：从PDF文件智能解析简历内容
+- **分享功能**：生成链接分享简历
+- **AI优化**：基于MiniMax大模型智能优化简历内容
+
+### 技术栈
 - **前端**: React 19 + TypeScript + Vite（`frontend/`）
-- **后端**: Go + Gin 框架（`backend/`）
+- **后端**: Python FastAPI（`backend/`）
+- **数据库**: MySQL
+- **AI**: MiniMax API
 
 ## 常用命令
 
@@ -26,24 +38,33 @@ npm run lint         # 运行 ESLint
 ### 后端开发
 ```bash
 cd backend
-go run main.go       # 启动后端服务器（端口 8082）
-go build -o server  # 构建二进制文件
-go test -v ./...    # 运行所有测试
+# 启动开发服务器（自动重载）
+python3 main.py
+
+# 或使用 uvicorn
+python3 -m uvicorn main:app --host 0.0.0.0 --port 8082 --reload
+
+# 安装依赖
+pip3 install -r requirements.txt
 ```
 
-### 后端测试
+### 启动本地服务
+
+**前端 + Python后端：**
 ```bash
-cd backend
-go test -v ./internal/services/...  # 运行 services 层测试
-```
+# 前端 (5173)
+cd frontend && npm run dev
 
-当前已实现的单元测试：
-- `pdf_parser_test.go` - PDF 简历解析器测试
-  - 辅助函数测试（中文姓名判断、技术栈判断）
-  - Section 识别测试
-  - 条目分割测试
-  - 个人信息/教育/工作/项目/技能提取测试
-  - 完整解析流程测试
+# Python后端 (8082) - 在WSL中
+cd /mnt/d/programs/instance-interview/backend
+export RESUME_DB_HOST=111.231.107.210
+export RESUME_DB_PORT=13306
+export RESUME_DB_USER=interview
+export RESUME_DB_PASSWORD=interviewSQL
+export RESUME_DB_NAME=interview
+export RESUME_PORT=8082
+python3 main.py
+```
 
 ### 部署
 **重要**: 每次修改代码后，**必须运行部署脚本**将改动发布到服务器。
@@ -53,17 +74,11 @@ go test -v ./internal/services/...  # 运行 services 层测试
 wsl ./deploy.sh
 ```
 
-或者通过 Bash（需要管理员授权）：
-```bash
-bash -c "cd /mnt/d/programs/instance-interview && ./deploy.sh"
-```
-
 部署脚本会自动：构建前后端 → 上传文件 → 重启服务
 
 **部署后必须检查**：
-1. 服务是否正常启动（查看后端日志确认无 panic）
+1. 服务是否正常启动（查看后端日志确认无错误）
 2. 前端功能是否正常（刷新页面测试）
-3. 如果出现 `panic: regexp: Compile` 错误，说明正则表达式语法有问题，需要修复后重新部署
 
 **服务器信息**:
 - 地址：`111.231.107.210`
@@ -137,11 +152,12 @@ docker run -d -p 3306:3306 \
 - `src/styles/` - 样式文件（resumeTheme.ts 简历主题配置）
 
 ### 后端结构
-- `backend/internal/handlers/` - HTTP 处理器（auth.go、resume.go）
-- `backend/internal/models/` - 数据库模型（GORM）
-- `backend/internal/services/` - 业务逻辑（ai.go AI 优化）
-- `backend/internal/middleware/` - Gin 中间件（CORS、JWT）
-- `backend/internal/config/` - 配置
+- `routers/` - API 路由（auth.py、resume.py、shared.py）
+- `models/` - SQLAlchemy 数据模型（resume.py、user.py）
+- `services/` - 业务逻辑（auth_service.py、resume_service.py、ai_service.py）
+- `schemas/` - Pydantic 请求/响应模型
+- `middleware/` - 中间件（auth.py JWT认证）
+- `utils/` - 工具函数（security.py 密码哈希、JWT）
 
 ### API 端点
 基础路径：`/api/v1`
@@ -153,16 +169,22 @@ docker run -d -p 3306:3306 \
 
 **需要认证：**
 - `GET /auth/me` - 获取当前用户
+- `PUT /auth/profile` - 更新个人资料
+- `PUT /auth/password` - 修改密码
 - `GET /resumes` - 获取简历列表
 - `GET /resumes/:id` - 获取简历详情
 - `POST /resumes` - 创建简历
 - `PUT /resumes/:id` - 更新简历
 - `DELETE /resumes/:id` - 删除简历
+- `POST /resumes/:id/share` - 启用分享
+- `DELETE /resumes/:id/share` - 禁用分享
+- `GET /shared/:token` - 通过分享链接获取简历（公开）
 
 ### 关键技术
 - 认证：JWT 存储在 localStorage
 - 数据：简历以 JSON 字符串存储在 MySQL
-- PDF：前端使用 `@react-pdf/renderer` 生成
+- PDF生成：前端使用 `@react-pdf/renderer`
+- PDF解析：后端使用 pdfplumber
 - UI：shadcn/ui + Tailwind CSS
 - 表单：React Hook Form + Zod
 
@@ -172,12 +194,13 @@ docker run -d -p 3306:3306 \
 - `frontend/src/components/ResumePDF.tsx` - PDF 生成组件
 - `frontend/src/components/ResumePreview.tsx` - 简历预览组件
 - `frontend/src/styles/resumeThemes.ts` - 简历主题配置（5种模板风格）
-- `backend/main.go` - 服务器入口
-- `backend/internal/services/pdf_parser.go` - PDF 简历解析器（类结构）
+- `backend/main.py` - FastAPI 服务器入口
+- `backend/services/pdf_parser.py` - PDF 简历解析器
+- `backend/services/ai_service.py` - AI 优化服务
 
 ## PDF 简历导入功能
 
-解析器类：`ResumePDFParser`（位于 `backend/internal/services/pdf_parser.go`）
+解析器类：`ResumePDFParser`（位于 `backend/services/pdf_parser.py`）
 
 **主要功能：**
 - 支持 Section 识别：教育背景、工作经历、项目经验、专业技能、获奖荣誉、语言能力
