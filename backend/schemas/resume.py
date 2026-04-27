@@ -13,7 +13,7 @@ class ResumeCreateRequest(BaseModel):
     title: Optional[str] = "我的简历"
     theme_id: Optional[int] = 0
     resume_type: Optional[str] = "full"
-    user_id: int  # 必填，与 Go 版本一致
+    user_id: Optional[int] = None  # 可选，后端从 token 自动获取
     personal_info: Optional[str] = "{}"  # JSON 字符串
     education: Optional[str] = "[]"
     work_experience: Optional[str] = "[]"
