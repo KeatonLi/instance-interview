@@ -1,18 +1,10 @@
 // API 配置
-// 开发环境默认使用本地服务器，生产环境使用远程服务器
+// 所有地址完全通过环境变量配置，不硬编码任何服务器地址
 
-// 远程服务器地址
-const REMOTE_API_URL = 'http://111.231.107.210:8082/api/v1';
+// API 基础地址 - 必须通过 VITE_API_URL 环境变量设置
+// 开发环境：在 .env.local 中设置 VITE_API_URL
+// 生产环境：通过部署脚本注入 VITE_API_URL
+export const API_BASE_URL = import.meta.env.VITE_API_URL || '';
 
-// Docker 容器内地址（相对路径，通过 nginx 代理）
-const DOCKER_API_URL = '/api/v1';
-
-// 根据环境变量决定使用哪个地址
-// - VITE_API_URL 设置则使用该值
-// - 容器内默认使用相对路径 /api/v1
-// - 开发环境默认使用远程服务器
-export const API_BASE_URL = import.meta.env.VITE_API_URL ||
-  (import.meta.env.DEV ? REMOTE_API_URL : DOCKER_API_URL);
-
-// 便捷方法
-export const isRemote = !import.meta.env.VITE_API_URL || import.meta.env.VITE_API_URL.startsWith('http://111.231');
+// 便捷方法：检查是否使用远程 API
+export const isRemote = API_BASE_URL.includes('://');

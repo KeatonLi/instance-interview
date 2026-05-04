@@ -119,8 +119,17 @@ build_project() {
   echo -e "${YELLOW}构建前端...${NC}"
   (
     cd frontend
+
+    # 准备环境变量文件（供构建时注入）
+    cat > .env.production << EOF
+VITE_API_URL=http://${SERVER_HOST}:8082/api/v1
+EOF
+
     npm install
     npm run build
+
+    # 清理临时环境变量文件
+    rm -f .env.production
 
     if [ ! -d "dist" ]; then
       echo -e "${RED}错误: 前端构建失败，dist 目录不存在${NC}"

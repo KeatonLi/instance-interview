@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run *)",
+      "Bash(python main.py)",
+      "Bash(jobs -l)",
+      "Bash(netstat -ano)",
+      "Bash(python -c \"import fastapi; print\\('fastapi ok'\\)\")"
+    ]
+  }
+}
