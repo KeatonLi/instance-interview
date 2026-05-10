@@ -1,7 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { FileText, Home, User, LogOut, Menu, X } from 'lucide-react';
+import { FileText, Home, Sparkles, User, LogOut, Menu, X, MessageCircle } from 'lucide-react';
 import { useState } from 'react';
 
 interface NavbarProps {
@@ -16,6 +16,9 @@ export default function Navbar({ showNav = true }: NavbarProps) {
   const navItems = [
     { path: '/', label: '首页', icon: Home },
     { path: '/resumes', label: '我的简历', icon: FileText },
+    { path: '/optimize', label: '简历优化', icon: Sparkles },
+    { path: '/interview', label: '模拟面试', icon: MessageCircle },
+    { path: '/interview/history', label: '面试记录', icon: MessageCircle },
   ];
 
   const isActive = (path: string) => {
