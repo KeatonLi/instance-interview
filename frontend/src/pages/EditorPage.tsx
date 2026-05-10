@@ -4,18 +4,14 @@ import { useAuth } from '@/contexts/AuthContext';
 import { resumeApi } from '@/lib/resumes';
 import { Button } from '@/components/ui/button';
 import {
-  BookOpen,
-  Check,
   Eye,
   FileText,
   Loader2,
-  PanelLeft,
   PanelRight,
-  Pencil,
   RotateCcw,
-  Save,
   Sparkles,
   X,
+  BookOpen,
 } from 'lucide-react';
 import type { ResumeData } from '@/types/resume';
 import { defaultResumeData } from '@/types/resume';
@@ -25,104 +21,8 @@ import { parseResumeData, sanitizeResumeFilename } from '@/lib/resumeData';
 import ResumeForm from '@/components/ResumeForm';
 import ResumePreview from '@/components/ResumePreview';
 import PDFDownloader from '@/components/PDFDownloader';
-
-// 自动保存指示器
-const AutoSaveIndicator: React.FC<{ saving: boolean; lastSaved: Date | null; error?: string }> = ({
-  saving,
-  lastSaved,
-  error
-}) => {
-  if (error) {
-    return (
-      <div className="flex items-center gap-1.5 text-red-500 text-xs">
-        <div className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" />
-        <span>保存失败</span>
-      </div>
-    );
-  }
-
-  if (saving) {
-    return (
-      <div className="flex items-center gap-1.5 text-amber-500 text-xs">
-        <Loader2 size={12} className="animate-spin" />
-        <span>保存中...</span>
-      </div>
-    );
-  }
-
-  if (lastSaved) {
-    return (
-      <div className="flex items-center gap-1.5 text-emerald-600 text-xs">
-        <Check size={12} />
-        <span>已保存 {lastSaved.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}</span>
-      </div>
-    );
-  }
-
-  return null;
-};
-
-// 模板选择器
-const ThemeSelector: React.FC<{
-  themeId: number;
-  onChange: (id: number) => void;
-}> = ({ themeId, onChange }) => {
-  const [open, setOpen] = useState(false);
-
-  return (
-    <div className="relative">
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={() => setOpen(!open)}
-        className="h-8 px-3 text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-100"
-      >
-        <div
-          className="w-3 h-3 rounded-sm mr-2"
-          style={{
-            background: themes[themeId]?.colors.header ||
-              (themeId === 0 ? '#1e293b' : themeId === 1 ? '#ffffff' : themeId === 2 ? 'linear-gradient(135deg, #3b82f6, #8b5cf6)' : '#0f172a')
-          }}
-        />
-        {themes[themeId]?.name || '默认模板'}
-      </Button>
-
-      {open && (
-        <>
-          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute top-full left-0 mt-1 z-50 bg-white rounded-xl border border-slate-200 shadow-xl shadow-black/10 p-2 min-w-[200px]">
-            <div className="text-[10px] font-medium text-slate-400 uppercase tracking-wider px-2 py-1.5">
-              选择模板
-            </div>
-            <div className="space-y-0.5">
-              {themes.map((theme, index) => (
-                <button
-                  key={index}
-                  onClick={() => { onChange(index); setOpen(false); }}
-                  className={`w-full flex items-center gap-3 px-2 py-2 rounded-lg text-xs transition-all ${
-                    themeId === index
-                      ? 'bg-blue-50 text-blue-700'
-                      : 'text-slate-600 hover:bg-slate-50'
-                  }`}
-                >
-                  <div
-                    className="w-5 h-5 rounded"
-                    style={{
-                      background: theme.colors.header,
-                      border: theme.colors.border === '#e5e7eb' ? '1px solid #e5e7eb' : 'none'
-                    }}
-                  />
-                  <span className="font-medium">{theme.name}</span>
-                  {themeId === index && <Check size={12} className="ml-auto text-blue-500" />}
-                </button>
-              ))}
-            </div>
-          </div>
-        </>
-      )}
-    </div>
-  );
-};
+import EditorToolbar from '@/components/EditorToolbar';
+import OptimizeDialog from '@/components/OptimizeDialog';
 
 const EditorPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -130,7 +30,6 @@ const EditorPage: React.FC = () => {
   const navigate = useNavigate();
 
   const [resumeTitle, setResumeTitle] = useState('我的简历');
-  const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [resumeData, setResumeData] = useState<ResumeData>(defaultResumeData);
   const [themeId, setThemeId] = useState(0);
   const [showPreviewPanel, setShowPreviewPanel] = useState(true);
@@ -140,7 +39,9 @@ const EditorPage: React.FC = () => {
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [saveError, setSaveError] = useState('');
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const titleInputRef = useRef<HTMLInputElement>(null);
+
+  // 优化对话框状态
+  const [optimizeDialogOpen, setOptimizeDialogOpen] = useState(false);
 
   const safeSetResumeData = useCallback((data: ResumeData | ((prev: ResumeData) => ResumeData)) => {
     setResumeData(prev => {
@@ -251,22 +152,15 @@ const EditorPage: React.FC = () => {
     }
   };
 
-  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setResumeTitle(e.target.value);
+  const handleTitleChange = useCallback((title: string) => {
+    setResumeTitle(title);
     setHasChanges(true);
-  };
-
-  const handleTitleBlur = async () => {
-    setIsEditingTitle(false);
-    if (id && resumeTitle) {
-      try {
-        await resumeApi.updateResume(parseInt(id), { title: resumeTitle });
+    if (id && title) {
+      resumeApi.updateResume(parseInt(id), { title }).then(() => {
         setLastSaved(new Date());
-      } catch (error) {
-        console.error('Failed to update title:', error);
-      }
+      }).catch(console.error);
     }
-  };
+  }, [id]);
 
   const handleDataChange = useCallback((newData: ResumeData | ((prev: ResumeData) => ResumeData)) => {
     safeSetResumeData(newData);
@@ -297,6 +191,15 @@ const EditorPage: React.FC = () => {
     }
   };
 
+  // 优化单条内容
+  const handleOptimizeContent = async (content: string, type: string) => {
+    const res = await resumeApi.optimizeContent(content, type);
+    if (res.code === 0) {
+      return res.data;
+    }
+    throw new Error('优化失败，请稍后重试');
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
@@ -315,66 +218,65 @@ const EditorPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-100/50">
-      {/* 顶部导航栏 */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-b border-slate-200/80 shadow-sm">
-        <div className="max-w-[1600px] mx-auto px-4">
-          <div className="flex items-center justify-between h-14">
-            {/* 左侧 - 返回和标题 */}
+      {/* 顶部工具栏 */}
+      <EditorToolbar
+        title={resumeTitle}
+        themeId={themeId}
+        saving={saving}
+        hasChanges={hasChanges}
+        lastSaved={lastSaved}
+        saveError={saveError}
+        onTitleChange={handleTitleChange}
+        onThemeChange={handleThemeChange}
+        onSave={handleSave}
+        onBack={() => navigate('/resumes')}
+      />
+
+      {/* 工具栏 - AI 优化按钮 */}
+      <div className="fixed top-14 left-0 right-0 z-40 bg-white/80 backdrop-blur-xl border-b border-slate-200/60">
+        <div className="max-w-[1800px] mx-auto px-4 py-2">
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => navigate('/resumes')}
-                className="h-8 px-2.5 text-slate-500 hover:text-slate-900 hover:bg-slate-100"
-              >
-                <PanelLeft className="w-4 h-4" />
-              </Button>
-
-              <div className="h-5 w-px bg-slate-200" />
-
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 rounded-lg flex items-center justify-center shadow-md shadow-blue-500/20">
-                  <FileText className="w-4 h-4 text-white" />
+              {/* 模板选择快捷栏 */}
+              <div className="flex items-center gap-2">
+                <BookOpen className="w-4 h-4 text-blue-500" />
+                <span className="text-xs font-medium text-slate-500">模板：</span>
+                <div className="flex items-center gap-1">
+                  {themes.map((theme, index) => (
+                    <button
+                      key={index}
+                      onClick={() => handleThemeChange(index)}
+                      className={`w-6 h-6 rounded border-2 transition-all ${
+                        themeId === index ? 'border-blue-500 scale-110' : 'border-transparent hover:scale-105'
+                      }`}
+                      style={{
+                        background: theme.colors.header,
+                        border: theme.colors.border === '#e5e7eb' ? '1px solid #e5e7eb' : 'none'
+                      }}
+                      title={theme.name}
+                    />
+                  ))}
                 </div>
+              </div>
 
-                {isEditingTitle ? (
-                  <input
-                    ref={titleInputRef}
-                    type="text"
-                    value={resumeTitle}
-                    onChange={handleTitleChange}
-                    onBlur={handleTitleBlur}
-                    onKeyDown={(e) => e.key === 'Enter' && handleTitleBlur()}
-                    autoFocus
-                    className="h-7 w-48 text-sm font-semibold bg-slate-100 border border-blue-300 rounded px-2 outline-none focus:ring-2 focus:ring-blue-500/20"
-                  />
-                ) : (
-                  <button
-                    onClick={() => setIsEditingTitle(true)}
-                    className="flex items-center gap-1.5 h-8 px-2 -mx-2 rounded hover:bg-slate-100 transition-colors group"
-                  >
-                    <span className="text-sm font-semibold text-slate-800">{resumeTitle}</span>
-                    <Pencil className="w-3 h-3 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity" />
-                  </button>
+              <div className="h-4 w-px bg-slate-200" />
+
+              {/* 简历统计 */}
+              <div className="hidden md:flex items-center gap-4 text-xs text-slate-400">
+                {resumeData.workExperience.length > 0 && (
+                  <span>{resumeData.workExperience.length} 条工作经历</span>
+                )}
+                {resumeData.projects.length > 0 && (
+                  <span>{resumeData.projects.length} 个项目</span>
+                )}
+                {resumeData.education.length > 0 && (
+                  <span>{resumeData.education.length} 条教育经历</span>
                 )}
               </div>
             </div>
 
-            {/* 中间 - 状态 */}
-            <div className="hidden md:flex items-center gap-4">
-              <ThemeSelector themeId={themeId} onChange={handleThemeChange} />
-              <AutoSaveIndicator saving={saving} lastSaved={lastSaved} error={saveError} />
-
-              {hasChanges && (
-                <div className="flex items-center gap-1.5 px-2 py-1 bg-amber-50 border border-amber-200 rounded text-[10px] font-medium text-amber-700">
-                  <div className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-pulse" />
-                  未保存
-                </div>
-              )}
-            </div>
-
-            {/* 右侧 - 操作按钮 */}
             <div className="flex items-center gap-2">
+              {/* 示例数据 */}
               <Button
                 variant="ghost"
                 size="sm"
@@ -385,6 +287,7 @@ const EditorPage: React.FC = () => {
                 示例
               </Button>
 
+              {/* 重置 */}
               <Button
                 variant="ghost"
                 size="sm"
@@ -395,6 +298,7 @@ const EditorPage: React.FC = () => {
                 重置
               </Button>
 
+              {/* 预览切换 */}
               <Button
                 variant="outline"
                 size="sm"
@@ -404,73 +308,32 @@ const EditorPage: React.FC = () => {
                 {showPreviewPanel ? <PanelRight className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
               </Button>
 
+              {/* PDF 下载 */}
               <PDFDownloader
                 resumeData={resumeData}
                 filename={sanitizeResumeFilename(resumeTitle || resumeData.personalInfo.name || 'resume')}
                 className="h-8 px-3 text-xs border-slate-300"
               />
-
-              <Button
-                size="sm"
-                onClick={handleSave}
-                disabled={saving}
-                className="h-8 px-4 text-xs font-medium bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-md shadow-blue-500/20"
-              >
-                {saving ? (
-                  <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
-                ) : (
-                  <Save className="w-3.5 h-3.5 mr-1.5" />
-                )}
-                保存
-              </Button>
             </div>
           </div>
         </div>
-      </header>
+      </div>
 
       {/* 主内容区 */}
-      <main className="pt-14 min-h-screen">
-        <div className="max-w-[1600px] mx-auto flex">
+      <main className="pt-24 min-h-screen">
+        <div className="max-w-[1800px] mx-auto flex">
           {/* 编辑区域 */}
           <div className={`flex-1 min-w-0 transition-all duration-300 ${showPreviewPanel ? 'xl:w-[calc(100%-440px)]' : 'w-full'}`}>
             <div className="p-4 lg:p-6">
               {/* 简历表单卡片 */}
               <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
-                {/* 模板快捷选择栏 */}
-                <div className="px-4 py-3 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white">
-                  <div className="flex items-center gap-2">
-                    <BookOpen className="w-4 h-4 text-blue-500" />
-                    <span className="text-xs font-semibold text-slate-700">选择模板风格</span>
-                    <div className="h-3 w-px bg-slate-200 mx-1" />
-                    <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 flex-1">
-                      {themes.map((theme, index) => (
-                        <button
-                          key={index}
-                          onClick={() => handleThemeChange(index)}
-                          className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                            themeId === index
-                              ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/20'
-                              : 'bg-white text-slate-600 border border-slate-200 hover:border-blue-300 hover:text-blue-600'
-                          }`}
-                        >
-                          <div
-                            className="w-3 h-3 rounded-sm"
-                            style={{
-                              background: theme.colors.header,
-                              border: theme.layout === 'minimalist' ? '1px solid #e5e7eb' : 'none'
-                            }}
-                          />
-                          {theme.name}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
                 {/* 表单内容 */}
                 <div className="p-4 lg:p-6">
                   <div className="max-w-3xl mx-auto">
-                    <ResumeForm data={resumeData} setData={handleDataChange} />
+                    <ResumeForm
+                      data={resumeData}
+                      setData={handleDataChange}
+                    />
                   </div>
                 </div>
               </div>
@@ -479,7 +342,7 @@ const EditorPage: React.FC = () => {
 
           {/* 预览面板 */}
           {showPreviewPanel && (
-            <div className="hidden xl:block w-[420px] flex-shrink-0 border-l border-slate-200/80 bg-slate-50/50 sticky top-14 h-[calc(100vh-3.5rem)] overflow-hidden">
+            <div className="hidden xl:block w-[420px] flex-shrink-0 border-l border-slate-200/80 bg-slate-50/50 sticky top-24 h-[calc(100vh-6rem)] overflow-hidden">
               <div className="h-full flex flex-col">
                 {/* 预览头部 */}
                 <div className="px-4 py-3 bg-white border-b border-slate-200/80 flex items-center justify-between">
@@ -523,6 +386,18 @@ const EditorPage: React.FC = () => {
           显示预览
         </Button>
       )}
+
+      {/* 单条优化对话框 */}
+      <OptimizeDialog
+        open={optimizeDialogOpen}
+        onOpenChange={setOptimizeDialogOpen}
+        resumeData={resumeData}
+        onApply={(newData) => {
+          safeSetResumeData(newData);
+          setHasChanges(true);
+        }}
+        onOptimize={handleOptimizeContent}
+      />
     </div>
   );
 };
