@@ -6,6 +6,10 @@ import RegisterPage from '@/pages/RegisterPage';
 import ResumeListPage from '@/pages/ResumeListPage';
 import EditorPage from '@/pages/EditorPage';
 import SharedResumePage from '@/pages/SharedResumePage';
+import OptimizePage from '@/pages/OptimizePage';
+import InterviewPage from '@/pages/InterviewPage';
+import InterviewHistoryPage from '@/pages/InterviewHistoryPage';
+import InterviewHistoryDetailPage from '@/pages/InterviewHistoryDetailPage';
 import './App.css';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -46,6 +50,38 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <EditorPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/optimize"
+        element={
+          <ProtectedRoute>
+            <OptimizePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/interview"
+        element={
+          <ProtectedRoute>
+            <InterviewPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/interview/history"
+        element={
+          <ProtectedRoute>
+            <InterviewHistoryPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/interview/history/:id"
+        element={
+          <ProtectedRoute>
+            <InterviewHistoryDetailPage />
           </ProtectedRoute>
         }
       />
