@@ -147,3 +147,37 @@ class DeleteResponse(BaseModel):
     """删除响应"""
     code: int = 0
     message: str = "deleted successfully"
+
+
+# ============ AI 优化相关 ============
+
+class OptimizeRequest(BaseModel):
+    """优化单条内容请求"""
+    content: str = Field(..., description="要优化的内容")
+    type: str = Field(..., description="内容类型: work_experience, project, education, award")
+
+
+class OptimizeResponse(BaseModel):
+    """优化单条内容响应"""
+    code: int = 0
+    message: str = "优化成功"
+    data: dict = Field(default_factory=lambda: {
+        "original": "",
+        "optimized": "",
+        "changes": []
+    })
+
+
+class OptimizeFullRequest(BaseModel):
+    """一键优化整份简历请求"""
+    resume_data: dict = Field(..., description="完整的简历数据")
+
+
+class OptimizeFullResponse(BaseModel):
+    """一键优化整份简历响应"""
+    code: int = 0
+    message: str = "优化成功"
+    data: dict = Field(default_factory=lambda: {
+        "optimized": {},
+        "summary": []
+    })

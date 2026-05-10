@@ -20,9 +20,11 @@ from database import get_db
 from schemas.resume import (
     ResumeCreateRequest, ResumeUpdateRequest,
     ResumeResponse, ResumeListResponse, ResumeImportResponse,
-    ShareResponse, DeleteResponse
+    ShareResponse, DeleteResponse, OptimizeRequest, OptimizeResponse,
+    OptimizeFullRequest, OptimizeFullResponse
 )
 from services import resume_service
+from services.ai_service import optimize_single_content, optimize_full_resume
 from services.pdf_parser import ResumePDFParser, parse_pdf
 from middleware.auth import auth_required
 
@@ -344,3 +346,84 @@ async def disable_share(
         )
 
     return {"code": 0, "message": "分享已取消"}
+
+
+@router.post("/optimize")
+async def optimize_content(
+    req: OptimizeRequest,
+    request: Request,
+    user: dict = Depends(auth_required),
+):
+    """优化单条简历内容"""
+    try:
+        if not req.content or len(req.content.strip()) == 0:
+            return {"code": 1, "message": "内容不能为空"}
+
+        if len(req.content) > 5000:
+            return {"code": 1, "message": "内容不能超过 5000 字"}
+
+        result = await optimize_single_content(
+            content=req.content,
+            content_type=req.type,
+            optimize_type="all"
+        )
+
+        if result.get("success"):
+            return {
+                "code": 0,
+                "message": "优化成功",
+                "data": {
+                    "original": result.get("original", ""),
+                    "optimized": result.get("optimized", ""),
+                    "changes": result.get("changes", [])
+                }
+            }
+        else:
+            return {
+                "code": 1,
+                "message": result.get("error", "优化失败"),
+                "data": {
+                    "original": result.get("original", ""),
+                    "optimized": result.get("original", ""),
+                    "changes": []
+                }
+            }
+
+    except Exception as e:
+        return {"code": 1, "message": f"优化失败: {str(e)}"}
+
+
+@router.post("/optimize-full")
+async def optimize_full(
+    req: OptimizeFullRequest,
+    request: Request,
+    user: dict = Depends(auth_required),
+):
+    """一键优化整份简历"""
+    try:
+        if not req.resume_data:
+            return {"code": 1, "message": "简历数据不能为空"}
+
+        result = await optimize_full_resume(req.resume_data)
+
+        if result.get("success"):
+            return {
+                "code": 0,
+                "message": "优化成功",
+                "data": {
+                    "optimized": result.get("optimized", {}),
+                    "summary": result.get("summary", [])
+                }
+            }
+        else:
+            return {
+                "code": 1,
+                "message": result.get("error", "优化失败"),
+                "data": {
+                    "optimized": req.resume_data,
+                    "summary": []
+                }
+            }
+
+    except Exception as e:
+        return {"code": 1, "message": f"优化失败: {str(e)}"}
