@@ -3,15 +3,16 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, Sparkles } from 'lucide-react';
 import type { ResumeData } from '@/types/resume';
 
 interface ResumeFormProps {
   data: ResumeData;
   setData: React.Dispatch<React.SetStateAction<ResumeData>>;
+  onOptimize?: () => void;
 }
 
-const ResumeForm: React.FC<ResumeFormProps> = ({ data, setData }) => {
+const ResumeForm: React.FC<ResumeFormProps> = ({ data, setData, onOptimize }) => {
   const updatePersonalInfo = (field: string, value: string) => {
     setData(prev => ({
       ...prev,
@@ -328,9 +329,16 @@ const ResumeForm: React.FC<ResumeFormProps> = ({ data, setData }) => {
                       <Input value={exp.position} onChange={(e) => updateWorkExperience(exp.id, 'position', e.target.value)} placeholder="高级工程师" className="h-7 text-xs" />
                     </div>
                   </div>
-                  <Button variant="ghost" size="sm" className="h-7 w-7 mt-5" onClick={() => removeWorkExperience(exp.id)}>
-                    <Trash2 size={12} className="text-red-400" />
-                  </Button>
+                  <div className="flex items-center gap-1 mt-5">
+                    {onOptimize && exp.description && (
+                      <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-blue-500 hover:text-blue-600 hover:bg-blue-50" onClick={onOptimize} title="AI 优化">
+                        <Sparkles size={12} />
+                      </Button>
+                    )}
+                    <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => removeWorkExperience(exp.id)}>
+                      <Trash2 size={12} className="text-red-400" />
+                    </Button>
+                  </div>
                 </div>
                 <div className="grid grid-cols-3 gap-2">
                   <div className="space-y-1">
@@ -440,9 +448,16 @@ const ResumeForm: React.FC<ResumeFormProps> = ({ data, setData }) => {
                       <Input value={project.role} onChange={(e) => updateProject(project.id, 'role', e.target.value)} placeholder="前端负责人" className="h-7 text-xs" />
                     </div>
                   </div>
-                  <Button variant="ghost" size="sm" className="h-7 w-7 mt-5" onClick={() => removeProject(project.id)}>
-                    <Trash2 size={12} className="text-red-400" />
-                  </Button>
+                  <div className="flex items-center gap-1 mt-5">
+                    {onOptimize && project.description && (
+                      <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-blue-500 hover:text-blue-600 hover:bg-blue-50" onClick={onOptimize} title="AI 优化">
+                        <Sparkles size={12} />
+                      </Button>
+                    )}
+                    <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => removeProject(project.id)}>
+                      <Trash2 size={12} className="text-red-400" />
+                    </Button>
+                  </div>
                 </div>
                 <div className="grid grid-cols-3 gap-2">
                   <div className="space-y-1">
