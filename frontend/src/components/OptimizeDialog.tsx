@@ -98,12 +98,15 @@ const sectionConfigs: SectionConfig[] = [
 ];
 
 export default function OptimizeDialog({
-  open: _open,
+  open,
   onOpenChange,
   resumeData,
   onApply,
   onOptimize,
 }: OptimizeDialogProps) {
+  // Don't render if dialog is not open
+  if (!open) return null;
+
   const [activeSection, setActiveSection] = useState<ContentType>('work_experience');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [selectedType, setSelectedType] = useState<string>('all');

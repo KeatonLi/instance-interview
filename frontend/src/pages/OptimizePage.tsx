@@ -4,22 +4,23 @@ import { useAuth } from '@/contexts/AuthContext';
 import { resumeApi } from '@/lib/resumes';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Sparkles, Check, FileText } from 'lucide-react';
+import { Loader2, Sparkles, Check, FileText, Wand2, ArrowRight, AlertCircle } from 'lucide-react';
 import type { ResumeData } from '@/types/resume';
 import { defaultResumeData } from '@/types/resume';
-import Navbar from '@/components/Navbar';
+
 
 interface OptimizeType {
   value: string;
   label: string;
   desc: string;
+  icon: string;
 }
 
 const optimizeTypes: OptimizeType[] = [
-  { value: 'wording', label: '措辞优化', desc: '使描述更专业、简洁有力' },
-  { value: 'keywords', label: '关键词增强', desc: '增强 ATS 关键词通过率' },
-  { value: 'quantify', label: '成就量化', desc: '量化工作成果，突出业绩' },
-  { value: 'all', label: '全部', desc: '综合优化所有方面' },
+  { value: 'wording', label: '措辞优化', desc: '专业、简洁有力', icon: '✍️' },
+  { value: 'keywords', label: '关键词增强', desc: 'ATS通过率提升', icon: '🎯' },
+  { value: 'quantify', label: '成就量化', desc: '突出业绩数据', icon: '📊' },
+  { value: 'all', label: '全部', desc: '综合优化', icon: '✨' },
 ];
 
 type ContentType = 'work_experience' | 'project' | 'education' | 'award';
@@ -27,6 +28,7 @@ type ContentType = 'work_experience' | 'project' | 'education' | 'award';
 interface SectionConfig {
   type: ContentType;
   label: string;
+  icon: string;
   getContent: (data: ResumeData) => Array<{ id: string; title: string; content: string }>;
 }
 
@@ -34,6 +36,7 @@ const sectionConfigs: SectionConfig[] = [
   {
     type: 'work_experience',
     label: '工作经历',
+    icon: '💼',
     getContent: (data) => data.workExperience.map(exp => ({
       id: exp.id,
       title: exp.company || '未命名公司',
@@ -43,6 +46,7 @@ const sectionConfigs: SectionConfig[] = [
   {
     type: 'project',
     label: '项目经验',
+    icon: '🚀',
     getContent: (data) => data.projects.map(proj => ({
       id: proj.id,
       title: proj.name || '未命名项目',
@@ -52,6 +56,7 @@ const sectionConfigs: SectionConfig[] = [
   {
     type: 'education',
     label: '教育背景',
+    icon: '🎓',
     getContent: (data) => data.education.map(edu => ({
       id: edu.id,
       title: edu.school || '未命名学校',
@@ -61,6 +66,7 @@ const sectionConfigs: SectionConfig[] = [
   {
     type: 'award',
     label: '荣誉奖项',
+    icon: '🏆',
     getContent: (data) => data.awards.map(award => ({
       id: award.id,
       title: award.title || '未命名奖项',
@@ -76,10 +82,12 @@ export default function OptimizePage() {
   const [loading, setLoading] = useState(true);
   const [resumes, setResumes] = useState<any[]>([]);
   const [selectedResume, setSelectedResume] = useState<ResumeData | null>(null);
+  const [selectedResumeTitle, setSelectedResumeTitle] = useState('');
   const [activeSection, setActiveSection] = useState<ContentType>('work_experience');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [optimizing, setOptimizing] = useState(false);
   const [result, setResult] = useState<{ original: string; optimized: string; changes: string[] } | null>(null);
+  const [hoveredType, setHoveredType] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -109,6 +117,7 @@ export default function OptimizePage() {
       languages: resume.languages ? JSON.parse(resume.languages) : [],
     };
     setSelectedResume(parsed);
+    setSelectedResumeTitle(resume.title);
     setSelectedId(null);
     setResult(null);
   };
@@ -143,77 +152,128 @@ export default function OptimizePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-100 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/30 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-xl shadow-indigo-500/30 animate-pulse">
+            <Sparkles className="w-8 h-8 text-white" />
+          </div>
+          <p className="text-slate-500 text-sm">加载中...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-100">
-      <Navbar />
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/30">
+      <main className="max-w-7xl mx-auto px-4 py-8">
+        {/* Header */}
+        <div className="text-center mb-10">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-blue-100 text-blue-700 rounded-full text-sm font-medium mb-4">
+            <Wand2 className="w-4 h-4" />
+            AI 智能优化
+          </div>
+          <h1 className="text-3xl font-bold text-slate-900 mb-2">
+            简历
+            <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">内容优化</span>
+          </h1>
+          <p className="text-slate-500 max-w-md mx-auto">
+            选择简历和要优化的内容，AI 将为你提供专业级的优化建议
+          </p>
+        </div>
 
-      <main className="max-w-7xl mx-auto px-4 py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
           {/* 左侧：简历列表 */}
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-            <div className="px-4 py-3 border-b border-slate-100 bg-slate-50">
-              <h2 className="font-medium text-slate-700 flex items-center gap-2">
-                <FileText className="w-4 h-4 text-blue-500" />
-                选择简历
-              </h2>
+          <div className="lg:col-span-2 space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-slate-800">选择简历</h2>
+              <span className="text-sm text-slate-400">{resumes.length} 份</span>
             </div>
-            <div className="divide-y divide-slate-100 max-h-[600px] overflow-auto">
+
+            <div className="bg-white rounded-2xl shadow-lg shadow-slate-200/50 overflow-hidden border border-slate-100/50">
               {resumes.length === 0 ? (
-                <div className="p-8 text-center text-slate-400">
-                  <FileText className="w-10 h-10 mx-auto mb-3 opacity-30" />
-                  <p className="text-sm">暂无简历</p>
+                <div className="p-12 text-center">
+                  <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <FileText className="w-8 h-8 text-slate-300" />
+                  </div>
+                  <p className="text-slate-500 mb-4">还没有简历</p>
                   <Button
-                    variant="link"
                     onClick={() => navigate('/editor')}
-                    className="text-blue-500 text-sm mt-2"
+                    className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
                   >
                     创建新简历
+                    <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
                 </div>
               ) : (
-                resumes.map(resume => (
-                  <button
-                    key={resume.id}
-                    onClick={() => handleSelectResume(resume)}
-                    className={`w-full p-4 text-left transition-all ${
-                      selectedResume && resumes.some(r => r.id === resume.id)
-                        ? 'bg-blue-50 border-l-4 border-blue-500'
-                        : 'hover:bg-slate-50 border-l-4 border-transparent'
-                    }`}
-                  >
-                    <div className="font-medium text-slate-800">{resume.title}</div>
-                    <div className="text-xs text-slate-400 mt-1">
-                      更新于 {new Date(resume.updated_at).toLocaleDateString('zh-CN')}
-                    </div>
-                  </button>
-                ))
+                <div className="divide-y divide-slate-100 max-h-[500px] overflow-auto">
+                  {resumes.map((resume, idx) => {
+                    const isSelected = selectedResumeTitle === resume.title;
+                    return (
+                      <button
+                        key={resume.id}
+                        onClick={() => handleSelectResume(resume)}
+                        className={`w-full p-4 text-left transition-all duration-200 ${
+                          isSelected
+                            ? 'bg-gradient-to-r from-blue-50 to-indigo-50 border-l-4 border-l-blue-500'
+                            : 'hover:bg-slate-50 border-l-4 border-l-transparent'
+                        }`}
+                        style={{ animationDelay: `${idx * 50}ms` }}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                            isSelected
+                              ? 'bg-blue-500 text-white'
+                              : 'bg-slate-100 text-slate-400'
+                          }`}>
+                            <FileText className="w-5 h-5" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className={`font-medium truncate ${isSelected ? 'text-blue-700' : 'text-slate-800'}`}>
+                              {resume.title}
+                            </div>
+                            <div className="text-xs text-slate-400 mt-1">
+                              {new Date(resume.updated_at).toLocaleDateString('zh-CN', {
+                                month: 'short',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </div>
+                          </div>
+                          {isSelected && (
+                            <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
+                              <Check className="w-4 h-4 text-white" />
+                            </div>
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
               )}
             </div>
           </div>
 
           {/* 右侧：优化界面 */}
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-            <div className="px-4 py-3 border-b border-slate-100 bg-gradient-to-r from-blue-600 to-indigo-600">
-              <h2 className="font-medium text-white flex items-center gap-2">
-                <Sparkles className="w-4 h-4" />
-                智能优化
-              </h2>
-            </div>
-
-            {!selectedResume ? (
-              <div className="p-12 text-center text-slate-400">
-                <Sparkles className="w-12 h-12 mx-auto mb-4 opacity-20" />
-                <p className="text-sm">请从左侧选择一份简历开始优化</p>
+          <div className="lg:col-span-3 space-y-6">
+            {/* 已选简历卡片 */}
+            {selectedResume && (
+              <div className="bg-gradient-to-r from-slate-800 to-slate-900 rounded-2xl p-6 text-white shadow-xl">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center">
+                    <FileText className="w-6 h-6 text-white/70" />
+                  </div>
+                  <div>
+                    <div className="text-sm text-white/60">当前简历</div>
+                    <div className="font-semibold text-lg">{selectedResumeTitle}</div>
+                  </div>
+                </div>
               </div>
-            ) : (
-              <div className="p-4 space-y-4">
-                {/* 标签页 */}
+            )}
+
+            {/* 标签页 */}
+            <div className="bg-white rounded-2xl shadow-lg shadow-slate-200/50 overflow-hidden border border-slate-100/50">
+              <div className="px-6 pt-6">
                 <Tabs
                   value={activeSection}
                   onValueChange={(v) => {
@@ -222,104 +282,130 @@ export default function OptimizePage() {
                     setResult(null);
                   }}
                 >
-                  <TabsList className="grid w-full grid-cols-4 h-10 bg-slate-100 rounded-lg p-1">
+                  <TabsList className="grid w-full grid-cols-4 h-12 bg-slate-100 rounded-xl p-1">
                     {sectionConfigs.map(config => (
                       <TabsTrigger
                         key={config.type}
                         value={config.type}
-                        className="text-xs rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm"
+                        className="text-sm rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:text-blue-600"
                       >
+                        <span className="mr-1">{config.icon}</span>
                         {config.label}
                       </TabsTrigger>
                     ))}
                   </TabsList>
 
                   {sectionConfigs.map(config => (
-                    <TabsContent key={config.type} value={config.type} className="space-y-3 mt-4">
-                      <label className="text-xs font-medium text-slate-500">选择要优化的条目</label>
-                      <div className="grid grid-cols-2 gap-2 max-h-48 overflow-auto">
-                        {config.getContent(selectedResume).map(item => (
-                          <button
-                            key={item.id}
-                            onClick={() => { setSelectedId(item.id); setResult(null); }}
-                            className={`p-3 rounded-lg border text-left transition-all ${
-                              selectedId === item.id
-                                ? 'border-blue-500 bg-blue-50 shadow-sm'
-                                : 'border-slate-200 hover:border-blue-300 hover:bg-slate-50'
-                            }`}
-                          >
-                            <div className="text-xs font-medium text-slate-700 truncate">{item.title}</div>
-                            <div className="text-[10px] text-slate-400 truncate mt-0.5">{item.content || '暂无内容'}</div>
-                          </button>
-                        ))}
+                    <TabsContent key={config.type} value={config.type} className="space-y-4 mt-6">
+                      {/* 选择要优化的条目 */}
+                      <div>
+                        <h3 className="text-sm font-semibold text-slate-700 mb-3">选择要优化的条目</h3>
+                        {selectedResume ? (
+                          <div className="grid grid-cols-2 gap-3">
+                            {config.getContent(selectedResume).map(item => (
+                              <button
+                                key={item.id}
+                                onClick={() => { setSelectedId(item.id); setResult(null); }}
+                                className={`p-4 rounded-xl border-2 text-left transition-all duration-200 ${
+                                  selectedId === item.id
+                                    ? 'border-blue-500 bg-blue-50 shadow-lg shadow-blue-200/50'
+                                    : 'border-slate-200 hover:border-blue-300 hover:bg-slate-50'
+                                }`}
+                              >
+                                <div className="font-medium text-slate-800 truncate">{item.title}</div>
+                                <div className="text-xs text-slate-400 truncate mt-1">{item.content || '暂无内容'}</div>
+                              </button>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="text-sm text-slate-400 text-center py-4">请先选择简历</div>
+                        )}
+                      </div>
+
+                      {/* 优化类型选择 */}
+                      <div>
+                        <h3 className="text-sm font-semibold text-slate-700 mb-3">选择优化方式</h3>
+                        <div className="grid grid-cols-2 gap-3">
+                          {optimizeTypes.map(type => (
+                            <button
+                              key={type.value}
+                              onClick={() => setHoveredType(type.value)}
+                              onMouseEnter={() => setHoveredType(type.value)}
+                              onMouseLeave={() => setHoveredType(null)}
+                              className={`p-4 rounded-xl border-2 text-left transition-all duration-200 ${
+                                hoveredType === type.value
+                                  ? 'border-blue-500 bg-gradient-to-br from-blue-50 to-indigo-50 shadow-lg shadow-blue-200/50'
+                                  : 'border-slate-200 hover:border-blue-300'
+                              }`}
+                            >
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="text-lg">{type.icon}</span>
+                                <span className="font-medium text-slate-800">{type.label}</span>
+                              </div>
+                              <div className="text-xs text-slate-500">{type.desc}</div>
+                            </button>
+                          ))}
+                        </div>
                       </div>
                     </TabsContent>
                   ))}
                 </Tabs>
+              </div>
 
-                {/* 优化类型选择 */}
-                <div className="space-y-2">
-                  <label className="text-xs font-medium text-slate-500">优化类型</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {optimizeTypes.map(type => (
-                      <button
-                        key={type.value}
-                        className="p-3 rounded-lg border border-slate-200 hover:border-blue-300 hover:bg-slate-50 text-left transition-all"
-                      >
-                        <div className="text-xs font-medium text-slate-700">{type.label}</div>
-                        <div className="text-[10px] text-slate-400 mt-0.5">{type.desc}</div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* 原文 */}
+              {/* 原文 & 优化结果 */}
+              <div className="p-6 bg-gradient-to-b from-slate-50 to-white border-t border-slate-100">
                 {selectedId && (
-                  <div className="space-y-1">
-                    <label className="text-xs font-medium text-slate-500">原文</label>
-                    <div className="p-3 bg-slate-50 rounded-lg text-xs text-slate-600 max-h-24 overflow-auto">
-                      {selectedItem?.content || '暂无内容'}
+                  <div className="space-y-4">
+                    {/* 原文 */}
+                    <div className="bg-white rounded-xl p-4 border border-slate-200">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="w-2 h-2 bg-slate-400 rounded-full" />
+                        <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">原文</span>
+                      </div>
+                      <p className="text-sm text-slate-600 leading-relaxed">
+                        {selectedItem?.content || '暂无内容'}
+                      </p>
                     </div>
-                  </div>
-                )}
 
-                {/* 优化结果 */}
-                {result && (
-                  <div className="space-y-1">
-                    <label className="text-xs font-medium text-emerald-600 flex items-center gap-1">
-                      <Check size={12} />
-                      优化后
-                    </label>
-                    <div className="p-3 bg-emerald-50 rounded-lg text-xs text-slate-700 max-h-40 overflow-auto whitespace-pre-wrap">
-                      {result.optimized}
-                    </div>
-                    {result.changes.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mt-2">
-                        {result.changes.map((change, idx) => (
-                          <span key={idx} className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-[10px]">
-                            {change}
-                          </span>
-                        ))}
+                    {/* 优化结果 */}
+                    {result && (
+                      <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-xl p-4 border border-emerald-200">
+                        <div className="flex items-center gap-2 mb-2">
+                          <div className="w-2 h-2 bg-emerald-500 rounded-full" />
+                          <span className="text-xs font-semibold text-emerald-600 uppercase tracking-wide">优化后</span>
+                        </div>
+                        <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
+                          {result.optimized}
+                        </p>
+                        {result.changes.length > 0 && (
+                          <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-emerald-200">
+                            {result.changes.map((change, idx) => (
+                              <span key={idx} className="px-2.5 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-medium">
+                                {change}
+                              </span>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
                 )}
 
                 {/* 操作按钮 */}
-                <div className="flex gap-2 pt-2">
+                <div className="flex gap-3 mt-6">
                   <Button
                     onClick={handleOptimize}
                     disabled={!selectedId || !selectedItem?.content || optimizing}
-                    className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+                    className="flex-1 h-12 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 text-white shadow-lg shadow-blue-500/25 rounded-xl"
                   >
                     {optimizing ? (
                       <>
-                        <Loader2 size={14} className="mr-1.5 animate-spin" />
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                         优化中...
                       </>
                     ) : (
                       <>
-                        <Sparkles size={14} className="mr-1.5" />
+                        <Sparkles className="w-4 h-4 mr-2" />
                         开始优化
                       </>
                     )}
@@ -328,15 +414,22 @@ export default function OptimizePage() {
                     <Button
                       onClick={handleApply}
                       variant="outline"
-                      className="border-emerald-300 text-emerald-600 hover:bg-emerald-50"
+                      className="h-12 px-6 border-emerald-300 text-emerald-600 hover:bg-emerald-50 rounded-xl"
                     >
-                      <Check size={14} className="mr-1.5" />
-                      应用
+                      <Check className="w-4 h-4 mr-2" />
+                      应用建议
                     </Button>
                   )}
                 </div>
+
+                {!selectedId && selectedResume && (
+                  <div className="flex items-center gap-2 text-slate-400 text-sm mt-4 justify-center">
+                    <AlertCircle className="w-4 h-4" />
+                    请选择一个要优化的条目
+                  </div>
+                )}
               </div>
-            )}
+            </div>
           </div>
         </div>
       </main>

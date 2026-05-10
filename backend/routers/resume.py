@@ -12,9 +12,11 @@ POST  /api/v1/resumes/:id/share - 启用分享
 DELETE /api/v1/resumes/:id/share - 禁用分享
 """
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Query, Request
+from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional
 import json
+import io
 
 from database import get_db
 from schemas.resume import (
@@ -26,6 +28,7 @@ from schemas.resume import (
 from services import resume_service
 from services.ai_service import optimize_single_content, optimize_full_resume
 from services.pdf_parser import ResumePDFParser, parse_pdf
+from services.pdf_generator import generate_resume_pdf
 from middleware.auth import auth_required
 
 
@@ -65,6 +68,80 @@ async def list_resumes(
     return ResumeListResponse(
         code=0,
         data=result.get("data")
+    )
+
+
+@router.get("/{resume_id}/export-pdf")
+async def export_resume_pdf(
+    resume_id: int,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    user: dict = Depends(auth_required),
+):
+    """导出简历为 PDF"""
+    user_id = int(user.get("user_id", 0))
+
+    # 获取简历详情
+    result = await resume_service.get_resume(
+        db=db,
+        resume_id=resume_id,
+        user_id=user_id
+    )
+
+    if result.get("code") != 0:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"code": result.get("code", 1), "message": result.get("message", "简历不存在")}
+        )
+
+    resume = result.get("data", {})
+
+    # 解析简历数据
+    try:
+        resume_data = json.loads(resume.get('resume_data') or '{}')
+    except:
+        resume_data = {}
+
+    # 如果 resume_data 为空，尝试使用各个字段
+    if not resume_data:
+        resume_data = {
+            'personalInfo': json.loads(resume.get('personal_info') or '{}') or {},
+            'education': json.loads(resume.get('education') or '[]') or [],
+            'workExperience': json.loads(resume.get('work_experience') or '[]') or [],
+            'projects': json.loads(resume.get('projects') or '[]') or [],
+            'skills': json.loads(resume.get('skills') or '[]') or [],
+            'awards': json.loads(resume.get('awards') or '[]') or [],
+            'languages': json.loads(resume.get('languages') or '[]') or [],
+        }
+
+    # 生成 PDF
+    try:
+        pdf_data = generate_resume_pdf(resume_data, resume.get('title', 'resume'))
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"code": 1, "message": f"PDF生成失败: {str(e)}"}
+        )
+
+    # 返回 PDF
+    filename = resume.get('title', 'resume') or 'resume'
+    # RFC 5987 编码: 对非 ASCII 字符进行百分号编码
+    def pct_encode(s):
+        result = ''
+        for c in s.encode('utf-8'):
+            if c < 128 and chr(c).isalnum():
+                result += chr(c)
+            else:
+                result += f'%{c:02X}'
+        return result
+    ascii_filename = ''.join(c if ord(c) < 128 else '_' for c in filename)
+    rfc598_filename = pct_encode(filename)
+    return StreamingResponse(
+        io.BytesIO(pdf_data),
+        media_type='application/pdf',
+        headers={
+            'Content-Disposition': f'attachment; filename="{ascii_filename}.pdf"; filename*=UTF-8\'\'{rfc598_filename}.pdf'
+        }
     )
 
 

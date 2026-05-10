@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Download, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
+import { api } from '@/lib/api';
 import type { ResumeData } from '@/types/resume';
 import { sanitizeResumeFilename } from '@/lib/resumeData';
 
 interface PDFDownloaderProps {
+  resumeId?: number;
   resumeData?: ResumeData;
-  loadResumeData?: () => Promise<ResumeData>;
   filename?: string;
   className?: string;
 }
@@ -14,8 +15,8 @@ interface PDFDownloaderProps {
 type ExportStatus = 'idle' | 'generating' | 'success' | 'error';
 
 const PDFDownloader: React.FC<PDFDownloaderProps> = ({
+  resumeId,
   resumeData,
-  loadResumeData,
   filename = 'resume',
   className = '',
 }) => {
@@ -29,23 +30,26 @@ const PDFDownloader: React.FC<PDFDownloaderProps> = ({
     setErrorMessage('');
 
     try {
-      const data = loadResumeData ? await loadResumeData() : resumeData;
-      if (!data) {
-        throw new Error('未找到可导出的简历内容');
+      // 如果有 resumeId，优先使用后端 API
+      if (resumeId) {
+        await api.downloadPdf(resumeId, filename);
+      } else if (resumeData) {
+        // 否则使用前端 PDF 生成
+        const { generateResumePDF } = await import('./ResumePDF');
+        await generateResumePDF({
+          data: resumeData,
+          filename: sanitizeResumeFilename(filename),
+        });
+      } else {
+        throw new Error('无可用简历数据');
       }
-
-      const { generateResumePDF } = await import('./ResumePDF');
-      await generateResumePDF({
-        data,
-        filename: sanitizeResumeFilename(filename),
-      });
 
       setStatus('success');
       setTimeout(() => setStatus('idle'), 2000);
     } catch (error) {
-      console.error('Error generating PDF:', error);
+      console.error('Error downloading PDF:', error);
       const errorMsg = error instanceof Error ? error.message : '未知错误';
-      setErrorMessage(`PDF生成失败: ${errorMsg}`);
+      setErrorMessage(`PDF导出失败: ${errorMsg}`);
       setStatus('error');
       setTimeout(() => {
         setStatus('idle');
@@ -92,11 +96,13 @@ const PDFDownloader: React.FC<PDFDownloaderProps> = ({
     return status === 'success' ? 'default' : 'outline';
   };
 
+  const isDisabled = status === 'generating' || (!resumeId && !resumeData);
+
   return (
     <div className="space-y-2">
       <Button
         onClick={downloadPDF}
-        disabled={status === 'generating'}
+        disabled={isDisabled}
         variant={getButtonVariant()}
         className={`w-full shadow-md hover:shadow-lg transition-all duration-200 ${className}`}
       >

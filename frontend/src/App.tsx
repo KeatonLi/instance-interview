@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import HomePage from '@/pages/HomePage';
 import LoginPage from '@/pages/LoginPage';
@@ -10,6 +10,7 @@ import OptimizePage from '@/pages/OptimizePage';
 import InterviewPage from '@/pages/InterviewPage';
 import InterviewHistoryPage from '@/pages/InterviewHistoryPage';
 import InterviewHistoryDetailPage from '@/pages/InterviewHistoryDetailPage';
+import Navbar from '@/components/Navbar';
 import './App.css';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -30,6 +31,18 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+// 带导航栏的布局
+function AppLayout() {
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/30">
+      <Navbar />
+      <main>
+        <Outlet />
+      </main>
+    </div>
+  );
+}
+
 function AppRoutes() {
   return (
     <Routes>
@@ -37,54 +50,58 @@ function AppRoutes() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/shared/:token" element={<SharedResumePage />} />
-      <Route
-        path="/resumes"
-        element={
-          <ProtectedRoute>
-            <ResumeListPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/editor/:id?"
-        element={
-          <ProtectedRoute>
-            <EditorPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/optimize"
-        element={
-          <ProtectedRoute>
-            <OptimizePage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/interview"
-        element={
-          <ProtectedRoute>
-            <InterviewPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/interview/history"
-        element={
-          <ProtectedRoute>
-            <InterviewHistoryPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/interview/history/:id"
-        element={
-          <ProtectedRoute>
-            <InterviewHistoryDetailPage />
-          </ProtectedRoute>
-        }
-      />
+
+      {/* 需要登录的页面，使用 AppLayout */}
+      <Route element={<AppLayout />}>
+        <Route
+          path="/resumes"
+          element={
+            <ProtectedRoute>
+              <ResumeListPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/editor/:id?"
+          element={
+            <ProtectedRoute>
+              <EditorPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/optimize"
+          element={
+            <ProtectedRoute>
+              <OptimizePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/interview"
+          element={
+            <ProtectedRoute>
+              <InterviewPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/interview/history"
+          element={
+            <ProtectedRoute>
+              <InterviewHistoryPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/interview/history/:id"
+          element={
+            <ProtectedRoute>
+              <InterviewHistoryDetailPage />
+            </ProtectedRoute>
+          }
+        />
+      </Route>
     </Routes>
   );
 }

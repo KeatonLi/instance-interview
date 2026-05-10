@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { interviewApi } from '@/lib/resumes';
 import { Button } from '@/components/ui/button';
 import { Loader2, Star, MessageCircle } from 'lucide-react';
-import Navbar from '@/components/Navbar';
+
 
 interface Answer {
   question: string;
@@ -100,8 +100,6 @@ export default function InterviewHistoryDetailPage() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <Navbar />
-
       <main className="max-w-4xl mx-auto px-4 py-6">
         {/* 概览卡片 */}
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 mb-6">

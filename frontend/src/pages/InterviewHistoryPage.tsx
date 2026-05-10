@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { interviewApi } from '@/lib/resumes';
 import { Button } from '@/components/ui/button';
 import { Loader2, Star, Clock, Briefcase, FileText, ChevronRight } from 'lucide-react';
-import Navbar from '@/components/Navbar';
+
 
 interface InterviewRecord {
   id: number;
@@ -75,8 +75,6 @@ export default function InterviewHistoryPage() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <Navbar />
-
       <main className="max-w-4xl mx-auto px-4 py-6">
         {records.length === 0 ? (
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-12 text-center">

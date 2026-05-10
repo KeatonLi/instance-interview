@@ -17,12 +17,9 @@ import {
   Clock,
   Copy,
   Edit,
-  Eye,
   FileText,
   FileUp,
   Layers3,
-  Loader2,
-  MoreHorizontal,
   Plus,
   Search,
   Share2,
@@ -31,60 +28,27 @@ import {
   Upload,
 } from 'lucide-react';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import Navbar from '@/components/Navbar';
+
 import ResumePreview from '@/components/ResumePreview';
-import PDFDownloader from '@/components/PDFDownloader';
-import { parseResumeData, sanitizeResumeFilename } from '@/lib/resumeData';
+import { parseResumeData } from '@/lib/resumeData';
 import { themes } from '@/styles/resumeThemes';
 
-// 简历卡片 - 精致的玻璃拟态卡片
-const ResumeCard: React.FC<{
+// 简历缩略图卡片
+const ResumeThumbnail: React.FC<{
   resume: Resume;
-  onPreview: () => void;
+  previewData: ResumeData | null;
   onEdit: () => void;
   onDelete: () => void;
-  onDuplicate?: () => void;
   onShare?: () => void;
-}> = ({ resume, onPreview, onEdit, onDelete, onDuplicate, onShare }) => {
-  const [previewData, setPreviewData] = useState<ResumeData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const cardRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const loadPreview = async () => {
-      try {
-        const res = await resumeApi.getResume(resume.id);
-        setPreviewData(parseResumeData(res.data));
-      } catch (error) {
-        console.error('Failed to load preview:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadPreview();
-  }, [resume.id]);
-
+  onDuplicate?: () => void;
+}> = ({ resume, previewData, onEdit, onDelete, onShare, onDuplicate }) => {
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
-    const now = new Date();
-    const diff = now.getTime() - date.getTime();
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    if (days === 0) return '今天';
-    if (days === 1) return '昨天';
-    if (days < 7) return `${days}天前`;
-    if (days < 30) return `${Math.floor(days / 7)}周前`;
     return date.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' });
   };
 
@@ -92,107 +56,89 @@ const ResumeCard: React.FC<{
 
   return (
     <div className="group relative">
-      {/* 简历卡片 - 玻璃拟态效果 */}
-      <div
-        ref={cardRef}
-        className="relative bg-white/70 backdrop-blur-sm cursor-pointer transition-all duration-500 hover:bg-white hover:shadow-xl hover:shadow-slate-900/10 hover:-translate-y-1 overflow-hidden rounded-2xl border border-slate-200/40"
-        onClick={onPreview}
-      >
-        {loading ? (
-          <div className="absolute inset-0 flex items-center justify-center bg-slate-50/80 backdrop-blur-sm">
-            <div className="w-8 h-8 border-2 border-blue-200 border-t-blue-500 rounded-full animate-spin" />
-          </div>
-        ) : previewData ? (
-          <>
-            <div className="absolute top-2 left-2 z-10">
-              <span className="px-2.5 py-1 bg-white/90 backdrop-blur-sm rounded-lg text-[10px] font-semibold text-slate-600 shadow-sm border border-slate-200/50">
-                {theme.name}
-              </span>
-            </div>
-            <div
-              className="w-full overflow-hidden"
-              style={{ height: '260px' }}
-            >
-              <div className="w-full h-full flex items-center justify-center bg-gradient-to-b from-slate-50 to-slate-100">
-                <ResumePreview data={previewData} themeId={resume.theme_id} scale={0.3} />
-              </div>
-            </div>
-
-            {/* 悬停时显示的操作面板 */}
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-slate-900/20 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-end justify-center pb-4">
-              <div className="flex items-center gap-2 translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
-                <button
-                  onClick={(e) => { e.stopPropagation(); onPreview(); }}
-                  className="px-4 py-2 bg-white rounded-xl text-xs font-semibold text-slate-700 shadow-lg hover:bg-slate-50 transition-colors flex items-center gap-1.5"
-                >
-                  <Eye className="w-3.5 h-3.5" /> 预览
-                </button>
-                <button
-                  onClick={(e) => { e.stopPropagation(); onEdit(); }}
-                  className="px-4 py-2 bg-blue-600 rounded-xl text-xs font-semibold text-white shadow-lg hover:bg-blue-700 transition-colors flex items-center gap-1.5"
-                >
-                  <Edit className="w-3.5 h-3.5" /> 编辑
-                </button>
-              </div>
-            </div>
-          </>
-        ) : (
-          <div className="w-full flex flex-col items-center justify-center bg-gradient-to-b from-slate-100 to-slate-50 text-slate-400" style={{ height: '260px' }}>
-            <FileText className="w-10 h-10 mb-3 opacity-40" />
-            <span className="text-xs">加载失败</span>
-          </div>
+      {/* 操作按钮 */}
+      <div className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
+        <button
+          onClick={onEdit}
+          className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg shadow-lg flex items-center gap-1"
+        >
+          <Edit className="w-3 h-3" />
+          编辑
+        </button>
+        {onShare && (
+          <button
+            onClick={onShare}
+            className="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 text-xs font-medium rounded-lg shadow-lg flex items-center gap-1"
+          >
+            <Share2 className="w-3 h-3" />
+            分享
+          </button>
         )}
+        {onDuplicate && (
+          <button
+            onClick={onDuplicate}
+            className="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 text-xs font-medium rounded-lg shadow-lg flex items-center gap-1"
+          >
+            <Copy className="w-3 h-3" />
+            复制
+          </button>
+        )}
+        <button
+          onClick={onDelete}
+          className="px-3 py-1.5 bg-white hover:bg-red-50 text-red-600 text-xs font-medium rounded-lg shadow-lg flex items-center gap-1"
+        >
+          <Trash2 className="w-3 h-3" />
+        </button>
       </div>
 
-      {/* 简历信息 */}
-      <div className="pt-3 pb-1">
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0 flex-1">
-            <h3 className="text-sm font-semibold text-slate-700 truncate group-hover:text-blue-600 transition-colors">
-              {resume.title}
-            </h3>
-            <div className="flex items-center gap-2 text-[11px] text-slate-400 mt-1">
-              <span className="flex items-center gap-1">
+      {/* 模板标签 */}
+      <div className="absolute top-2 left-2 z-10">
+        <span
+          className="px-2 py-1 rounded-md text-[10px] font-medium shadow"
+          style={{
+            backgroundColor: theme.colors.header,
+            color: '#fff',
+          }}
+        >
+          {theme.name}
+        </span>
+      </div>
+
+      {/* 简历渲染 */}
+      <div className="bg-white rounded-lg shadow-md overflow-hidden border border-slate-200/60 hover:shadow-xl hover:shadow-slate-900/10 transition-all duration-200">
+        <div className="relative" style={{ paddingTop: '141.4%' /* A4 ratio */ }}>
+          {previewData ? (
+            <div className="absolute inset-0 flex items-center justify-center overflow-hidden bg-slate-50">
+              <div
+                className="transform scale-[0.25] origin-center pointer-events-none"
+                style={{ width: '400%', height: '400%' }}
+              >
+                <ResumePreview data={previewData} themeId={resume.theme_id} />
+              </div>
+            </div>
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center bg-slate-100 text-slate-400">
+              <div className="text-center">
+                <FileText className="w-8 h-8 mx-auto mb-1 opacity-40" />
+                <span className="text-xs">加载失败</span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* 底部信息 */}
+        <div className="p-3 border-t border-slate-100">
+          <div className="flex items-center justify-between">
+            <div className="min-w-0 flex-1">
+              <h3 className="text-sm font-medium text-slate-800 truncate group-hover:text-blue-600 transition-colors">
+                {resume.title}
+              </h3>
+              <div className="flex items-center gap-1 text-xs text-slate-400 mt-0.5">
                 <Clock className="w-3 h-3" />
                 {formatDate(resume.updated_at || resume.created_at)}
-              </span>
+              </div>
             </div>
           </div>
-
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-7 w-7 text-slate-400 hover:text-slate-600 hover:bg-slate-100 flex-shrink-0">
-                <MoreHorizontal size={14} />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-40 p-1.5">
-              <DropdownMenuItem onClick={onPreview} className="rounded-lg px-3 py-2">
-                <Eye className="w-4 h-4 mr-2 text-slate-500" />
-                <span className="text-sm">预览</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={onEdit} className="rounded-lg px-3 py-2">
-                <Edit className="w-4 h-4 mr-2 text-slate-500" />
-                <span className="text-sm">编辑</span>
-              </DropdownMenuItem>
-              {onDuplicate && (
-                <DropdownMenuItem onClick={onDuplicate} className="rounded-lg px-3 py-2">
-                  <Copy className="w-4 h-4 mr-2 text-slate-500" />
-                  <span className="text-sm">复制</span>
-                </DropdownMenuItem>
-              )}
-              {onShare && (
-                <DropdownMenuItem onClick={onShare} className="rounded-lg px-3 py-2">
-                  <Share2 className="w-4 h-4 mr-2 text-slate-500" />
-                  <span className="text-sm">分享</span>
-                </DropdownMenuItem>
-              )}
-              <DropdownMenuSeparator className="my-1.5 bg-slate-100" />
-              <DropdownMenuItem onClick={onDelete} className="rounded-lg px-3 py-2 text-red-600 focus:text-red-600 focus:bg-red-50">
-                <Trash2 className="w-4 h-4 mr-2" />
-                <span className="text-sm">删除</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
         </div>
       </div>
     </div>
@@ -316,70 +262,6 @@ const ImportResumeDialog: React.FC<{
   );
 };
 
-// 大预览对话框
-const PreviewDialog: React.FC<{
-  resume: Resume | null;
-  previewData: ResumeData | null;
-  loading: boolean;
-  onClose: () => void;
-}> = ({ resume, previewData, loading, onClose }) => {
-  if (!resume) return null;
-
-  return (
-    <Dialog open={!!resume} onOpenChange={onClose}>
-      <DialogContent className="max-w-5xl w-full max-h-[92vh] overflow-hidden p-0 bg-slate-100">
-        <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-md border-b border-slate-200 px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl flex items-center justify-center shadow-lg">
-                <FileText className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <DialogTitle className="text-base font-bold text-slate-800">{resume.title}</DialogTitle>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  {themes[resume.theme_id]?.name || '默认模板'} · 预览最终效果
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              {previewData && (
-                <PDFDownloader
-                  resumeData={previewData}
-                  filename={sanitizeResumeFilename(resume.title)}
-                />
-              )}
-              <Button variant="outline" size="sm" onClick={onClose} className="text-xs h-8">
-                关闭
-              </Button>
-            </div>
-          </div>
-        </div>
-
-        <div className="p-6 overflow-auto max-h-[calc(92vh-80px)] bg-gradient-to-b from-slate-100 to-slate-200">
-          {loading ? (
-            <div className="flex items-center justify-center py-20">
-              <div className="flex flex-col items-center gap-3">
-                <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
-                <p className="text-sm text-slate-500">加载中...</p>
-              </div>
-            </div>
-          ) : previewData ? (
-            <div className="flex justify-center">
-              <div className="shadow-2xl shadow-black/10 rounded-lg overflow-hidden">
-                <ResumePreview data={previewData} themeId={resume.theme_id} />
-              </div>
-            </div>
-          ) : (
-            <div className="flex items-center justify-center py-20 text-slate-400 text-sm">
-              加载失败
-            </div>
-          )}
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-};
-
 // 分享对话框
 const ShareDialog: React.FC<{
   resume: Resume | null;
@@ -423,7 +305,6 @@ const ShareDialog: React.FC<{
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // 检查是否已经分享
   useEffect(() => {
     if (resume?.share_token) {
       const fullUrl = `${window.location.origin}/shared/${resume.share_token}`;
@@ -474,17 +355,15 @@ const ShareDialog: React.FC<{
 
 export default function ResumeListPage() {
   const [resumes, setResumes] = useState<Resume[]>([]);
+  const [previewDataMap, setPreviewDataMap] = useState<Record<number, ResumeData>>({});
   const [loading, setLoading] = useState(true);
-  const [, setDeleting] = useState<number | null>(null);
-  const [previewResume, setPreviewResume] = useState<Resume | null>(null);
-  const [previewData, setPreviewData] = useState<ResumeData | null>(null);
-  const [loadingPreview, setLoadingPreview] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [shareResume, setShareResume] = useState<Resume | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterTheme, setFilterTheme] = useState<number | undefined>();
   const [sortBy, setSortBy] = useState<ResumeListParams['sort']>('updated_at_desc');
+
   const navigate = useNavigate();
   const { user } = useAuth();
 
@@ -500,6 +379,21 @@ export default function ResumeListPage() {
         sort: sortBy,
       });
       setResumes(res.data.list || []);
+
+      // 加载所有简历的预览数据
+      const list = res.data.list || [];
+      const dataMap: Record<number, ResumeData> = {};
+      await Promise.all(
+        list.map(async (resume: Resume) => {
+          try {
+            const detail = await resumeApi.getResume(resume.id);
+            dataMap[resume.id] = parseResumeData(detail.data);
+          } catch (e) {
+            console.error('Failed to load preview for', resume.id, e);
+          }
+        })
+      );
+      setPreviewDataMap(dataMap);
     } catch (error) {
       console.error('Failed to load resumes:', error);
     } finally {
@@ -522,14 +416,11 @@ export default function ResumeListPage() {
 
   const handleDeleteResume = async (id: number) => {
     if (!confirm('确定要删除这份简历吗？此操作不可恢复。')) return;
-    setDeleting(id);
     try {
       await resumeApi.deleteResume(id);
       setResumes((current) => current.filter((resume) => resume.id !== id));
     } catch (error) {
       console.error('Failed to delete resume:', error);
-    } finally {
-      setDeleting(null);
     }
   };
 
@@ -551,29 +442,12 @@ export default function ResumeListPage() {
     }
   };
 
-  const handlePreview = async (resume: Resume) => {
-    setLoadingPreview(true);
-    setPreviewResume(resume);
-    try {
-      const res = await resumeApi.getResume(resume.id);
-      setPreviewData(parseResumeData(res.data));
-    } catch (error) {
-      console.error('Failed to load resume preview:', error);
-      setPreviewData(null);
-    } finally {
-      setLoadingPreview(false);
-    }
-  };
-
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center">
+      <div className="min-h-screen bg-slate-100 flex items-center justify-center">
         <div className="relative">
-          <div className="w-20 h-20 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 rounded-2xl flex items-center justify-center shadow-2xl shadow-blue-500/30">
+          <div className="w-20 h-20 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 rounded-2xl flex items-center justify-center shadow-2xl shadow-blue-500/30 animate-pulse">
             <FileText className="w-10 h-10 text-white" />
-          </div>
-          <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-white rounded-xl shadow-lg flex items-center justify-center">
-            <Loader2 className="w-5 h-5 animate-spin text-blue-500" />
           </div>
         </div>
       </div>
@@ -581,7 +455,7 @@ export default function ResumeListPage() {
   }
 
   const totalResumes = resumes.length;
-  const thisWeekCount = resumes.filter(r => {
+  const thisWeekCount = resumes.filter((r) => {
     const date = new Date(r.updated_at || r.created_at);
     const weekAgo = new Date();
     weekAgo.setDate(weekAgo.getDate() - 7);
@@ -589,14 +463,11 @@ export default function ResumeListPage() {
   }).length;
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <Navbar />
-
+    <div className="min-h-screen bg-slate-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
-        {/* 头部区域 - 精致的渐变背景 */}
-        <div className="relative mb-10">
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-600/5 via-indigo-600/5 to-purple-600/5 rounded-3xl blur-xl" />
-          <div className="relative bg-white/80 backdrop-blur-sm rounded-2xl border border-slate-200/60 p-6 shadow-sm">
+        {/* 头部区域 */}
+        <div className="relative mb-8">
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-slate-200/60 p-6 shadow-sm">
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-5">
                 <div className="relative">
@@ -615,7 +486,7 @@ export default function ResumeListPage() {
                 </div>
               </div>
 
-              {/* 统计卡片 - 玻璃拟态风格 */}
+              {/* 统计卡片 */}
               <div className="hidden md:flex items-center gap-3">
                 <div className="group relative px-4 py-3 bg-white/60 backdrop-blur-sm rounded-xl border border-slate-200/60 shadow-sm hover:shadow-md hover:border-blue-200/50 transition-all duration-300">
                   <div className="flex items-center gap-3">
@@ -644,12 +515,12 @@ export default function ResumeListPage() {
           </div>
         </div>
 
-        {/* 操作栏 - 玻璃拟态搜索区 */}
-        <div className="relative mb-8">
+        {/* 操作栏 */}
+        <div className="relative mb-6">
           <div className="bg-white/60 backdrop-blur-sm rounded-2xl border border-slate-200/60 p-4 shadow-sm">
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-3 flex-1">
-                {/* 搜索框 - 精致风格 */}
+                {/* 搜索框 */}
                 <div className="relative flex-1 max-w-sm">
                   <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                   <Input
@@ -707,7 +578,7 @@ export default function ResumeListPage() {
           </div>
         </div>
 
-        {/* 空状态 - 精致的空状态设计 */}
+        {/* 空状态 */}
         {resumes.length === 0 ? (
           <div className="relative bg-white/70 backdrop-blur-sm rounded-3xl border border-slate-200/60 p-20 text-center shadow-sm">
             <div className="max-w-md mx-auto">
@@ -745,17 +616,16 @@ export default function ResumeListPage() {
             </div>
           </div>
         ) : (
-          /* 简历网格 */
-          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-5">
-            {resumes.map((resume, index) => (
-              <div
-                key={resume.id}
-                className="animate-in fade-in slide-in-from-bottom-4 duration-500"
-                style={{ animationDelay: `${index * 0.05}s`, animationFillMode: 'both' }}
-              >
-                <ResumeCard
+          <>
+            <span className="text-sm text-slate-500 mb-4 block">{resumes.length} 份简历</span>
+
+            {/* 简历网格 - 直接渲染简历内容 */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {resumes.map((resume) => (
+                <ResumeThumbnail
+                  key={resume.id}
                   resume={resume}
-                  onPreview={() => handlePreview(resume)}
+                  previewData={previewDataMap[resume.id]}
                   onEdit={() => navigate(`/editor/${resume.id}`)}
                   onDelete={() => handleDeleteResume(resume.id)}
                   onDuplicate={() => handleDuplicateResume(resume)}
@@ -764,37 +634,25 @@ export default function ResumeListPage() {
                     setShareDialogOpen(true);
                   }}
                 />
-              </div>
-            ))}
+              ))}
 
-            {/* 新建卡片 - 玻璃拟态风格 */}
-            <div
-              onClick={handleCreateResume}
-              className="group cursor-pointer flex flex-col"
-              style={{ aspectRatio: '3/4' }}
-            >
-              <div className="flex-1 bg-white/60 backdrop-blur-sm border-2 border-dashed border-slate-300 hover:border-blue-400 rounded-2xl flex flex-col items-center justify-center transition-all duration-400 hover:bg-white hover:shadow-lg hover:shadow-blue-500/5">
-                <div className="w-16 h-16 bg-gradient-to-br from-slate-100 to-slate-200 group-hover:from-blue-100 group-hover:to-indigo-100 rounded-2xl flex items-center justify-center mb-4 transition-all duration-400 group-hover:scale-110 group-hover:rotate-3">
+              {/* 新建卡片 */}
+              <div
+                onClick={handleCreateResume}
+                className="cursor-pointer flex flex-col items-center justify-center bg-white/50 border-2 border-dashed border-slate-300 hover:border-blue-400 hover:bg-blue-50/50 rounded-lg transition-all duration-300 min-h-[320px]"
+              >
+                <div className="w-16 h-16 bg-gradient-to-br from-slate-100 to-slate-200 group-hover:from-blue-100 group-hover:to-indigo-100 rounded-2xl flex items-center justify-center mb-4 transition-all duration-300 group-hover:scale-110">
                   <Plus className="w-8 h-8 text-slate-400 group-hover:text-blue-500 transition-colors" />
                 </div>
-                <p className="text-sm font-semibold text-slate-500 group-hover:text-blue-600 transition-colors">新建简历</p>
-                <p className="text-xs text-slate-400 mt-1">从空白开始</p>
-              </div>
-              <div className="pt-3 text-center">
-                <p className="text-sm font-medium text-slate-400 group-hover:text-blue-500 transition-colors">点击创建</p>
+                <p className="text-base font-semibold text-slate-500 group-hover:text-blue-600 transition-colors">新建简历</p>
+                <p className="text-sm text-slate-400 mt-1">从空白开始创建</p>
               </div>
             </div>
-          </div>
+          </>
         )}
       </div>
 
       <ImportResumeDialog open={importDialogOpen} onOpenChange={setImportDialogOpen} onImport={loadResumes} />
-      <PreviewDialog
-        resume={previewResume}
-        previewData={previewData}
-        loading={loadingPreview}
-        onClose={() => setPreviewResume(null)}
-      />
       <ShareDialog
         resume={shareResume}
         open={shareDialogOpen}
