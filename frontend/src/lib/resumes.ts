@@ -198,4 +198,135 @@ export const resumeApi = {
   // 获取分享的简历（公开）
   getSharedResume: (token: string) =>
     api.get<ResumeResponse>(`/shared/${token}`),
+
+  // 优化单条内容
+  optimizeContent: (content: string, type: string) =>
+    api.post<{
+      code: number;
+      data: {
+        original: string;
+        optimized: string;
+        changes: string[];
+      };
+    }>('/resumes/optimize', { content, type }),
+
+  // 一键优化整份简历
+  optimizeFull: (data: ResumeData) =>
+    api.post<{
+      code: number;
+      data: {
+        optimized: ResumeData;
+        summary: string[];
+      };
+    }>('/resumes/optimize-full', { resume_data: data }),
+};
+
+// 模拟面试 API
+export interface InterviewQuestion {
+  id: number;
+  question: string;
+  focus: string;
+  standard_answer?: string;
+}
+
+export interface InterviewStartResponse {
+  code: number;
+  message: string;
+  data: {
+    session_id: string;
+    resume_title: string;
+    question_count: number;
+    current_question: InterviewQuestion;
+    job_position?: string;
+  } | null;
+}
+
+export interface InterviewAnswerResponse {
+  code: number;
+  message: string;
+  data: {
+    question: string;
+    focus: string;
+    your_answer: string;
+    evaluation: string;
+    score: number;
+    standard_answer: string;
+    has_next: boolean;
+    next_index: number | null;
+  } | null;
+}
+
+export const interviewApi = {
+  // 开始面试
+  start: (resumeId: number, jobPosition?: string, questionCount?: number) =>
+    api.post<InterviewStartResponse>('/interview/start', {
+      resume_id: resumeId,
+      job_position: jobPosition,
+      question_count: questionCount || 5,
+    }),
+
+  // 提交回答
+  answer: (sessionId: string, questionIndex: number, answer: string) =>
+    api.post<InterviewAnswerResponse>('/interview/answer', {
+      session_id: sessionId,
+      question_index: questionIndex,
+      answer,
+    }),
+
+  // 获取下一个问题
+  next: (sessionId: string, currentIndex: number) =>
+    api.post<{
+      code: number;
+      data: {
+        current_index: number;
+        total: number;
+        question: InterviewQuestion;
+        completed: boolean;
+        overall_score?: number;
+        summary?: any;
+      } | null;
+    }>('/interview/next', {
+      session_id: sessionId,
+      current_index: currentIndex,
+    }),
+
+  // 获取面试记录列表
+  getRecords: () =>
+    api.get<{
+      code: number;
+      data: Array<{
+        id: number;
+        resume_title: string;
+        job_position: string | null;
+        total_questions: number;
+        overall_score: number;
+        status: string;
+        created_at: string;
+      }>;
+    }>('/interview/records'),
+
+  // 获取面试记录详情
+  getRecordDetail: (recordId: number) =>
+    api.get<{
+      code: number;
+      data: {
+        id: number;
+        session_id: string;
+        resume_title: string;
+        job_position: string | null;
+        total_questions: number;
+        overall_score: number;
+        answers: Array<{
+          question: string;
+          focus: string;
+          answer: string;
+          score: number;
+          evaluation: string;
+          standard_answer: string;
+        }>;
+        summary: string;
+        status: string;
+        created_at: string;
+      } | null;
+    }>(`/interview/records/${recordId}`),
 };
