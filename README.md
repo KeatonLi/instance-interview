@@ -4,24 +4,31 @@
   <img src="https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react" alt="React">
   <img src="https://img.shields.io/badge/TypeScript-5.9-3178C6?style=for-the-badge&logo=typescript" alt="TypeScript">
   <img src="https://img.shields.io/badge/TailwindCSS-3.4-06B6D4?style=for-the-badge&logo=tailwind-css" alt="Tailwind CSS">
-  <img src="https://img.shields.io/badge/Vite-7.2-646CFF?style=for-the-badge&logo=vite" alt="Vite">
+  <img src="https://img.shields.io/badge/FastAPI-0.115-009688?style=for-the-badge&logo=fastapi" alt="FastAPI">
+  <img src="https://img.shields.io/badge/Python-3.11-3776AB?style=for-the-badge&logo=python" alt="Python">
 </p>
 
-> 🚀 用 AI 赋能你的求职之路 - 智能简历解析、优化与生成
+> 用 AI 赋能你的求职之路 - 智能简历解析、优化、导出与模拟面试
 
-## 📋 项目简介
+## 项目简介
 
-**ResumeAI** 是一款基于 AI 的智能简历助手，旨在帮助求职者快速创建、优化和导出专业简历。通过深度集成 AI 技术，用户可以上传现有 PDF 简历自动提取内容，或通过直观的表单填写简历信息，并利用 AI 智能优化简历内容，大幅提升简历质量和求职成功率。
+**ResumeAI** 是一款基于 AI 的智能简历助手，旨在帮助求职者快速创建、优化简历并提升面试技能。通过深度集成 AI 技术，用户可以上传现有 PDF 简历自动提取内容，或通过直观的表单填写简历信息，利用 AI 智能优化简历内容，还能基于简历进行模拟面试训练，大幅提升求职成功率。
 
-## ✨ 核心功能
+## 核心功能
 
-### 1. 📄 PDF 简历智能解析
+### 1. 简历管理
+- 创建、编辑、删除、预览简历
+- 5 种精美简历模板可选
+- PDF 导入/导出
+- 分享链接生成
+
+### 2. PDF 简历智能解析
 - 支持上传现有 PDF 简历文件
 - 自动识别并提取简历中的关键信息
 - 包括：个人信息、工作经历、教育背景、技能等
 - 一键将 PDF 内容转换为结构化数据
 
-### 2. 📝 简历表单编辑
+### 3. 简历表单编辑
 - 直观的可视化表单界面
 - 完整的简历字段支持：
   - 个人信息（姓名、职位、联系方式等）
@@ -33,118 +40,153 @@
   - 语言能力
 - 实时预览，所见即所得
 
-### 3. 🤖 AI 简历智能优化
-- 基于 MiniMax M2.5 大语言模型
-- AI 分析现有简历内容
-- 提供优化建议：
-  - 措辞优化，使描述更具专业性
-  - 关键词增强，提升 ATS 通过率
-  - 成就量化，用数据说话
-  - 格式建议，结构更清晰
+### 4. AI 简历智能优化
+基于 MiniMax M2.5 大语言模型，提供多种优化方式：
 
-### 4. 📥 高质量 PDF 导出
+| 优化类型 | 说明 |
+|---------|------|
+| 措辞优化 | 使描述更专业、简洁有力 |
+| 关键词增强 | 增强 ATS 关键词通过率 |
+| 成就量化 | 量化工作成果，突出业绩数据 |
+
+- **单条优化**：快速优化简历中的单条内容
+- **一键优化**：整份简历全面优化
+
+### 5. AI 模拟面试
+基于简历内容生成针对性的技术面试问题，AI 实时评估回答并提供改进建议：
+
+- **问题生成**：基于简历中的工作经历和项目经验生成面试题
+- **多维评估**：技术深度、项目实战、场景行为、职业规划
+- **即时反馈**：每道题回答后显示评分、标准答案和改进建议
+- **综合报告**：面试完成后展示综合评分和总结
+- **历史记录**：保存每次面试记录，随时回顾复习
+
+### 6. 高质量 PDF 导出
 - 一键生成专业 PDF 简历
 - 精美的排版设计
 - 支持 A4 纸张格式
 - 高清输出，适配各类招聘平台
 
-## 🛠 技术栈
+## 技术栈
 
+### 前端
 | 类别 | 技术 |
 |------|------|
-| 前端框架 | React 19 |
+| 框架 | React 19 |
 | 语言 | TypeScript 5.9 |
 | 构建工具 | Vite 7 |
 | UI 框架 | Tailwind CSS 3.4 + shadcn/ui |
 | PDF 生成 | @react-pdf/renderer |
 | 表单处理 | React Hook Form + Zod |
-| AI 能力 | MiniMax M2.5 API |
 | 图标 | Lucide React |
 
-## 🚀 快速开始
+### 后端
+| 类别 | 技术 |
+|------|------|
+| 框架 | FastAPI (Python) |
+| 数据库 | MySQL |
+| AI 能力 | MiniMax M2.5 API |
 
-### 环境要求
+## 快速开始
 
-- Node.js 18+
-- npm / yarn / pnpm
-
-### 安装步骤
+### 前端
 
 ```bash
-# 克隆项目
-git clone https://github.com/yourusername/resume-ai.git
-
-# 进入项目目录
-cd resume-ai
-
-# 安装依赖
+cd frontend
 npm install
-
-# 启动开发服务器
-npm run dev
+npm run dev      # 开发服务器 http://localhost:5173
+npm run build    # 生产构建
 ```
 
-### 构建生产版本
+### 后端
 
 ```bash
-npm run build
+cd backend
+pip install -r requirements.txt
+python3 main.py  # 服务端口 8082
 ```
 
-## 📁 项目结构
+## API 接口
+
+基础路径: `/api/v1`
+
+**公开接口：**
+- `POST /auth/register` - 用户注册
+- `POST /auth/login` - 用户登录
+- `POST /auth/guest` - 游客登录
+- `GET /shared/:token` - 获取分享简历
+
+**简历接口（需认证）：**
+- `GET /resumes` - 简历列表
+- `POST /resumes` - 创建简历
+- `PUT /resumes/:id` - 更新简历
+- `DELETE /resumes/:id` - 删除简历
+- `POST /resumes/:id/share` - 启用分享
+- `POST /resumes/optimize` - 优化单条简历内容
+- `POST /resumes/optimize-full` - 一键优化整份简历
+
+**模拟面试接口（需认证）：**
+- `POST /interview/start` - 开始面试
+- `POST /interview/answer` - 提交回答
+- `POST /interview/next` - 获取下一道题
+- `GET /interview/records` - 获取面试记录列表
+- `GET /interview/records/:id` - 获取面试记录详情
+
+## 项目结构
 
 ```
-resume-ai/
-├── src/
-│   ├── components/
-│   │   ├── ui/              # shadcn/ui 基础组件
-│   │   ├── ResumeForm.tsx   # 简历表单组件
-│   │   ├── ResumePreview.tsx # 简历预览组件
-│   │   ├── ResumePDF.tsx    # PDF 渲染组件
-│   │   └── PDFDownloader.tsx # PDF 下载组件
-│   ├── types/
-│   │   └── resume.ts        # 简历数据类型定义
-│   ├── hooks/
-│   │   └── use-mobile.ts    # 移动端检测 Hook
-│   ├── lib/
-│   │   └── utils.ts         # 工具函数
-│   ├── App.tsx              # 主应用组件
-│   ├── main.tsx             # 入口文件
-│   └── index.css            # 全局样式
-├── index.html
-├── package.json
-├── tailwind.config.js
-├── tsconfig.json
-└── vite.config.ts
+instance-interview/
+├── frontend/                    # 前端项目
+│   ├── src/
+│   │   ├── pages/              # 页面组件
+│   │   │   ├── EditorPage.tsx         # 简历编辑器
+│   │   │   ├── OptimizePage.tsx        # 简历优化页
+│   │   │   ├── InterviewPage.tsx       # 模拟面试页
+│   │   │   ├── InterviewHistoryPage.tsx # 面试历史页
+│   │   │   └── InterviewHistoryDetailPage.tsx # 面试详情页
+│   │   ├── components/         # UI 组件
+│   │   │   ├── ui/             # shadcn/ui 基础组件
+│   │   │   ├── OptimizeDialog.tsx      # 单条优化弹窗
+│   │   │   └── FullOptimizeDialog.tsx  # 一键优化弹窗
+│   │   ├── contexts/           # React Context
+│   │   │   └── AuthContext.tsx  # 认证状态管理
+│   │   ├── lib/                # 工具库
+│   │   │   ├── api.ts          # API 客户端
+│   │   │   └── resumes.ts      # 简历 API 封装
+│   │   ├── types/              # 类型定义
+│   │   │   └── resume.ts       # 简历类型
+│   │   └── styles/             # 样式
+│   │       └── resumeThemes.ts # 5种模板主题
+│   └── ...
+├── backend/                     # 后端项目
+│   ├── routers/                # API 路由
+│   │   ├── auth.py             # 认证接口
+│   │   ├── resume.py           # 简历接口
+│   │   └── interview.py        # 模拟面试接口
+│   ├── services/                # 业务逻辑
+│   ├── schemas/                # Pydantic 模型
+│   ├── models/                 # 数据模型
+│   └── main.py                 # FastAPI 入口
+├── deploy.sh                    # 部署脚本
+└── README.md
 ```
 
-## 🎯 目标用户
+## 目标用户
 
-- 🧑‍💼 **求职者** - 需要快速创建或优化简历的专业人士
-- 🎓 **应届毕业生** - 首次撰写简历的学生
-- 🔄 **职场转型者** - 准备转向新行业的求职者
-- 📚 **留学申请者** - 需要英文简历的留学生
+- 求职者 - 需要快速创建或优化简历的专业人士
+- 应届毕业生 - 首次撰写简历的学生
+- 职场转型者 - 准备转向新行业的求职者
+- 留学申请者 - 需要英文简历的留学生
 
-## 💡 为什选择 ResumeAI？
+## 未来规划
 
-| 传统方式 | ResumeAI |
-|----------|----------|
-| 从零开始写简历 | AI 辅助，快速起步 |
-| 手动排版繁琐 | 自动生成精美 PDF |
-| 不知道如何优化 | AI 提供专业建议 |
-| 重复修改费时 | 实时预览快速迭代 |
-| 费用高昂 | 完全开源免费 |
-
-## 🔮 未来规划
-
-- [ ] PDF 简历智能解析与提取
-- [ ] MiniMax M2.5 AI 优化引擎
 - [ ] 多语言简历支持（中英文）
-- [ ] 简历模板库
+- [ ] 更多简历模板
 - [ ] 求职信生成
 - [ ] 简历评分系统
 - [ ] 云端保存与同步
 
-## 🤝 贡献指南
+## 贡献指南
 
 欢迎提交 Pull Request 或 Issue！
 
@@ -154,10 +196,10 @@ resume-ai/
 4. 推送分支 (`git push origin feature/amazing-feature`)
 5. 开启 Pull Request
 
-## 📄 许可证
+## 许可证
 
 MIT License - 欢迎自由使用和修改
 
 ---
 
-<p align="center">Made with ❤️ by ResumeAI</p>
+<p align="center">Made with ❤️</p>
