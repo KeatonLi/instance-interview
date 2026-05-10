@@ -4,7 +4,7 @@
 
 @layer base {
   :root {
-    /* 蓝白风格主题色 */
+    /* 蓝白风格主题色 - 精致版 */
     --background: 210 40% 98%;
     --foreground: 222 47% 11%;
     --card: 0 0% 100%;
@@ -24,54 +24,45 @@
     --border: 214 32% 91%;
     --input: 214 32% 91%;
     --ring: 217 91% 60%;
-    --radius: 0.625rem;
-    
-    /* 蓝色系渐变 */
-    --blue-gradient-from: 217 91% 60%;
-    --blue-gradient-to: 239 84% 67%;
-    --blue-light: 214 100% 97%;
-    --blue-soft: 210 100% 96%;
-    
-    /* Sidebar colors */
-    --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 222 47% 11%;
-    --sidebar-primary: 217 91% 60%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 40% 96%;
-    --sidebar-accent-foreground: 222 47% 11%;
-    --sidebar-border: 214 32% 91%;
-    --sidebar-ring: 217 91% 60%;
-  }
+    --radius: 0.75rem;
 
-  .dark {
-    --background: 222 47% 11%;
-    --foreground: 210 40% 98%;
-    --card: 222 47% 14%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222 47% 14%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 217 91% 60%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 217 33% 17%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217 33% 17%;
-    --muted-foreground: 215 20% 65%;
-    --accent: 217 33% 17%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62% 30%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 217 33% 17%;
-    --input: 217 33% 17%;
-    --ring: 217 91% 60%;
-    
-    --sidebar-background: 222 47% 11%;
-    --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 217 91% 60%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 217 33% 17%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 217 33% 17%;
-    --sidebar-ring: 217 91% 60%;
+    /* 品牌色系 */
+    --brand-blue: 217 91% 60%;
+    --brand-indigo: 239 84% 67%;
+    --brand-violet: 262 83% 58%;
+
+    /* 功能色系 */
+    --success: 142 76% 36%;
+    --warning: 38 92% 50%;
+    --info: 199 89% 48%;
+
+    /* 中性色系 */
+    --neutral-50: 210 40% 98%;
+    --neutral-100: 210 40% 96%;
+    --neutral-200: 214 32% 91%;
+    --neutral-300: 213 27% 81%;
+    --neutral-400: 215 16% 47%;
+    --neutral-500: 215 16% 35%;
+    --neutral-600: 215 16% 25%;
+    --neutral-700: 215 20% 17%;
+    --neutral-800: 217 19% 12%;
+    --neutral-900: 222 47% 11%;
+
+    /* 阴影层次 */
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.07), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.05);
+    --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.08), 0 8px 10px -6px rgb(0 0 0 / 0.04);
+
+    /* 蓝白渐变 */
+    --gradient-from: 217 91% 60%;
+    --gradient-to: 239 84% 67%;
+    --gradient-subtle: 214 100% 97%;
+
+    /* 动画时间 */
+    --duration-fast: 150ms;
+    --duration-normal: 200ms;
+    --duration-slow: 300ms;
   }
 }
 
@@ -79,128 +70,125 @@
   * {
     @apply border-border;
   }
+
   body {
-    @apply bg-background text-foreground antialiased;
+    @apply bg-slate-50 text-slate-900 antialiased;
     font-feature-settings: "rlig" 1, "calt" 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* 统一字体堆叠 */
+  html {
+    font-family: 'Noto Sans SC', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   }
 }
 
-/* 蓝白风格自定义工具类 */
+/* ========== 品牌渐变 ========== */
 @layer utilities {
-  .bg-blue-gradient {
-    background: linear-gradient(135deg, hsl(var(--blue-gradient-from)) 0%, hsl(var(--blue-gradient-to)) 100%);
+  /* 主渐变按钮背景 */
+  .bg-brand-gradient {
+    background: linear-gradient(135deg,
+      hsl(var(--gradient-from)) 0%,
+      hsl(var(--gradient-to)) 100%);
   }
-  
-  .bg-blue-light {
-    background-color: hsl(var(--blue-light));
+
+  /* 主渐变悬停效果 */
+  .bg-brand-gradient-hover {
+    background: linear-gradient(135deg,
+      hsl(217, 91%, 55%) 0%,
+      hsl(239, 84%, 62%) 100%);
   }
-  
-  .bg-blue-soft {
-    background-color: hsl(var(--blue-soft));
-  }
-  
-  .text-gradient-blue {
-    background: linear-gradient(135deg, hsl(var(--blue-gradient-from)) 0%, hsl(var(--blue-gradient-to)) 100%);
+
+  /* 文本渐变 */
+  .text-brand-gradient {
+    background: linear-gradient(135deg,
+      hsl(var(--gradient-from)) 0%,
+      hsl(var(--gradient-to)) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
-  
-  .shadow-blue {
-    box-shadow: 0 4px 14px 0 rgba(59, 130, 246, 0.39);
+
+  /* 柔和背景 */
+  .bg-subtle {
+    background-color: hsl(var(--gradient-subtle));
   }
-  
-  .shadow-blue-sm {
-    box-shadow: 0 2px 8px 0 rgba(59, 130, 246, 0.25);
+
+  /* ========== 阴影系统 ========== */
+  .shadow-brand-sm {
+    box-shadow: 0 2px 8px -2px rgba(59, 130, 246, 0.25),
+                0 1px 3px -1px rgba(59, 130, 246, 0.15);
   }
-  
-  .shadow-blue-lg {
-    box-shadow: 0 10px 30px -5px rgba(59, 130, 246, 0.3);
+
+  .shadow-brand {
+    box-shadow: 0 4px 14px -4px rgba(59, 130, 246, 0.35),
+                0 2px 6px -3px rgba(59, 130, 246, 0.2);
   }
-  
-  /* 卡片悬停效果 */
-  .card-hover {
-    @apply transition-all duration-300 ease-out;
+
+  .shadow-brand-lg {
+    box-shadow: 0 10px 28px -8px rgba(59, 130, 246, 0.3),
+                0 4px 10px -5px rgba(59, 130, 246, 0.2);
   }
-  
-  .card-hover:hover {
-    @apply shadow-lg -translate-y-1;
-    box-shadow: 0 10px 40px -10px rgba(59, 130, 246, 0.2);
+
+  /* ========== 卡片样式 ========== */
+  .card-base {
+    @apply bg-white rounded-xl border border-slate-200 shadow-sm;
   }
-  
-  /* 按钮动画 */
-  .btn-animate {
-    @apply transition-all duration-200 ease-out;
+
+  .card-elevated {
+    @apply bg-white rounded-xl border border-slate-200 shadow-md;
   }
-  
-  .btn-animate:hover {
-    @apply scale-105;
+
+  .card-interactive {
+    @apply card-base cursor-pointer transition-all duration-200;
   }
-  
-  .btn-animate:active {
-    @apply scale-95;
+
+  .card-interactive:hover {
+    @apply shadow-md border-slate-300 -translate-y-0.5;
   }
-  
-  /* 输入框聚焦效果 */
-  .input-focus {
-    @apply transition-all duration-200;
+
+  /* ========== 按钮样式 ========== */
+  .btn-primary {
+    @apply bg-brand-gradient text-white font-medium px-4 py-2 rounded-lg
+           transition-all duration-200 hover:bg-brand-gradient-hover
+           active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed
+           shadow-brand-sm hover:shadow-brand;
   }
-  
-  .input-focus:focus {
-    @apply ring-2 ring-blue-400 ring-offset-2;
+
+  .btn-secondary {
+    @apply bg-white text-slate-700 font-medium px-4 py-2 rounded-lg border border-slate-200
+           transition-all duration-200 hover:bg-slate-50 hover:border-slate-300
+           active:scale-[0.98];
   }
-  
-  /* 淡入动画 */
-  @keyframes fadeIn {
+
+  .btn-ghost {
+    @apply text-slate-600 font-medium px-3 py-1.5 rounded-lg
+           transition-all duration-200 hover:bg-slate-100 hover:text-slate-800;
+  }
+
+  /* ========== 动画 ========== */
+  /* 淡入上移 */
+  @keyframes fadeInUp {
     from {
       opacity: 0;
-      transform: translateY(10px);
+      transform: translateY(12px);
     }
     to {
       opacity: 1;
       transform: translateY(0);
     }
   }
-  
-  .animate-fade-in {
-    animation: fadeIn 0.5s ease-out forwards;
+
+  .animate-fade-in-up {
+    animation: fadeInUp 0.4s ease-out forwards;
   }
-  
-  /* 脉冲光晕 */
-  @keyframes pulse-glow {
-    0%, 100% {
-      box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4);
-    }
-    50% {
-      box-shadow: 0 0 20px 5px rgba(59, 130, 246, 0.2);
-    }
-  }
-  
-  .animate-pulse-glow {
-    animation: pulse-glow 2s ease-in-out infinite;
-  }
-  
-  /* 滑动进入 */
-  @keyframes slideIn {
-    from {
-      opacity: 0;
-      transform: translateX(-20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateX(0);
-    }
-  }
-  
-  .animate-slide-in {
-    animation: slideIn 0.4s ease-out forwards;
-  }
-  
-  /* 缩放弹跳 */
+
+  /* 缩放弹入 */
   @keyframes scaleIn {
     0% {
       opacity: 0;
-      transform: scale(0.9);
+      transform: scale(0.95);
     }
     70% {
       transform: scale(1.02);
@@ -210,34 +198,174 @@
       transform: scale(1);
     }
   }
-  
+
   .animate-scale-in {
     animation: scaleIn 0.3s ease-out forwards;
   }
+
+  /* 滑入 */
+  @keyframes slideInRight {
+    from {
+      opacity: 0;
+      transform: translateX(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  .animate-slide-in-right {
+    animation: slideInRight 0.3s ease-out forwards;
+  }
+
+  /* 脉冲光晕 */
+  @keyframes pulseGlow {
+    0%, 100% {
+      box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4);
+    }
+    50% {
+      box-shadow: 0 0 20px 4px rgba(59, 130, 246, 0.2);
+    }
+  }
+
+  .animate-pulse-glow {
+    animation: pulseGlow 2.5s ease-in-out infinite;
+  }
+
+  /* 加载旋转 */
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  .animate-spin-slow {
+    animation: spin 1s linear infinite;
+  }
+
+  /* 渐变流动背景 */
+  @keyframes gradientFlow {
+    0% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+    100% {
+      background-position: 0% 50%;
+    }
+  }
+
+  .animate-gradient-flow {
+    background-size: 200% 200%;
+    animation: gradientFlow 3s ease infinite;
+  }
+
+  /* 交错进入 */
+  .stagger-1 { animation-delay: 0.1s; }
+  .stagger-2 { animation-delay: 0.2s; }
+  .stagger-3 { animation-delay: 0.3s; }
+  .stagger-4 { animation-delay: 0.4s; }
+  .stagger-5 { animation-delay: 0.5s; }
+
+  /* ========== 输入框样式 ========== */
+  .input-base {
+    @apply w-full px-3 py-2 rounded-lg border border-slate-200
+           text-slate-800 placeholder:text-slate-400
+           transition-all duration-200
+           focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500;
+  }
+
+  /* ========== 标签样式 ========== */
+  .tag {
+    @apply inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium;
+  }
+
+  .tag-blue {
+    @apply bg-blue-100 text-blue-700;
+  }
+
+  .tag-green {
+    @apply bg-emerald-100 text-emerald-700;
+  }
+
+  .tag-amber {
+    @apply bg-amber-100 text-amber-700;
+  }
+
+  .tag-violet {
+    @apply bg-violet-100 text-violet-700;
+  }
+
+  /* ========== 分隔线 ========== */
+  .divider {
+    @apply h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent;
+  }
+
+  /* ========== 滚动条 ========== */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: hsl(215, 16%, 47%, 0.3);
+    border-radius: 3px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(215, 16%, 47%, 0.5);
+  }
+
+  /* ========== 选中文本 ========== */
+  ::selection {
+    background: hsl(217, 91%, 60%, 0.15);
+    color: hsl(222, 47%, 11%);
+  }
+
+  /* ========== 焦点样式 ========== */
+  :focus-visible {
+    @apply outline-none ring-2 ring-blue-500/40 ring-offset-2;
+  }
+
+  /* ========== 进度条 ========== */
+  .progress-bar {
+    @apply h-2 rounded-full bg-slate-100 overflow-hidden;
+  }
+
+  .progress-bar-fill {
+    @apply h-full rounded-full bg-brand-gradient transition-all duration-500 ease-out;
+  }
 }
 
-/* 滚动条美化 */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+/* ========== 组件特定样式 ========== */
+/* 简历卡片 */
+.resume-card {
+  @apply card-interactive p-4 animate-fade-in-up;
 }
 
-::-webkit-scrollbar-track {
-  background: hsl(var(--blue-light));
-  border-radius: 4px;
+.resume-card-selected {
+  @apply bg-blue-50 border-blue-500 shadow-brand-sm;
 }
 
-::-webkit-scrollbar-thumb {
-  background: hsl(217 91% 60% / 0.3);
-  border-radius: 4px;
+/* 问题卡片 */
+.question-card {
+  @apply card-base p-6;
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: hsl(217 91% 60% / 0.5);
+/* 评估结果卡片 */
+.evaluation-card {
+  @apply bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border border-blue-100 p-6;
 }
 
-/* 选中文本样式 */
-::selection {
-  background: hsl(217 91% 60% / 0.2);
-  color: hsl(222 47% 11%);
+/* 侧边栏标签页 */
+.tab-item {
+  @apply flex-1 py-2.5 text-sm font-medium rounded-lg transition-all duration-200
+         data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-blue-600
+         data-[state=inactive]:text-slate-500 data-[state=inactive]:hover:text-slate-700;
 }
