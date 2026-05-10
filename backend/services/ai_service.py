@@ -21,6 +21,11 @@ class AIService:
     def _build_prompt(self, content: str, optim_type: str, target: str = "") -> str:
         """构建提示词
 
+        设计原则：
+        1. 针对不同内容类型有专门的优化策略
+        2. 强调量化、关键词、专业表达
+        3. 输出格式统一为 JSON
+
         Args:
             content: 简历内容
             optim_type: 优化类型 (improve/translate/keywords)
@@ -28,35 +33,105 @@ class AIService:
         """
         if optim_type == "translate":
             if target == "en":
-                return f"""请将以下简历内容翻译成专业的英文简历，要求：
-1. 使用地道的英文表达
-2. 保留中文原文的专业术语
-3. 按照英文简历的格式习惯调整
+                return f"""你是一位专业的英文简历翻译专家。请将以下中文简历翻译成专业的英文简历。
 
-简历内容：
-{content}"""
+## 翻译要求
+1. 使用地道的英文表达，符合英文简历格式习惯
+2. 保留中文原文的专业术语（如技术名词、公司名称）
+3. 适当调整语序，使其更符合英文表达逻辑
+4. 保持简洁，每行不超过两行
+
+## 简历内容
+{content}
+
+## 输出格式（严格按 JSON 返回）
+{{
+    "translated": "翻译后的英文简历内容",
+    "notes": ["注意事项1", "注意事项2"]
+}}
+
+只返回 JSON，不要有其他内容。"""
             else:
-                return f"""请将以下英文简历翻译成中文，要求：
-1. 使用专业的中文表达
-2. 保留技术术语的英文原词
+                return f"""你是一位专业的中文简历翻译专家。请将以下英文简历翻译成专业的中文简历。
 
-简历内容：
-{content}"""
+## 翻译要求
+1. 使用专业的中文表达，符合中文简历格式习惯
+2. 保留技术术语的英文原词（如技术框架、开源项目）
+3. 适当调整语序，使其更符合中文表达逻辑
+4. 保持简洁，每行不超过两行
+
+## 简历内容
+{content}
+
+## 输出格式（严格按 JSON 返回）
+{{
+    "translated": "翻译后的中文简历内容",
+    "notes": ["注意事项1", "注意事项2"]
+}}
+
+只返回 JSON，不要有其他内容。"""
         elif optim_type == "keywords":
-            return f"""请分析以下简历，提取并补充可能遗漏的关键词（特别是技术关键词），这些关键词应该能帮助简历通过ATS系统。请列出需要添加的关键词，并说明原因。
+            return f"""你是一位专业的 ATS 简历优化专家。请分析以下简历，提取并补充可能遗漏的关键词。
 
-简历内容：
-{content}"""
+## ATS 关键词优化要求
+1. 分析现有简历内容，识别缺失的关键技术词
+2. 添加职位描述中常见的关键词（如 React, TypeScript, Node.js 等）
+3. 补充常见的软技能关键词（如团队协作、项目管理）
+4. 确保关键词自然融入内容，不要堆砌
+
+## 简历内容
+{content}
+
+## 输出格式（严格按 JSON 返回）
+{{
+    "current_keywords": ["现有关键词1", "现有关键词2"],
+    "missing_keywords": ["缺失关键词1", "缺失关键词2"],
+    "suggestions": ["补充建议1", "补充建议2"]
+}}
+
+只返回 JSON，不要有其他内容。"""
         else:  # improve
-            return f"""请优化以下简历，要求：
-1. 使用强有力的动词描述成就
-2. 量化工作成果（使用具体数字）
-3. 突出技术能力和业务价值
-4. 保持简洁专业
-5. 检查并修正语法错误
+            return f"""你是一位专业的简历优化专家，擅长帮助程序员提升简历质量。你有10年以上互联网行业 HR 和技术面试官经验。
 
-简历内容：
-{content}"""
+## 简历内容
+{content}
+
+---
+
+## 优化要求
+
+### 1. 措辞优化
+- 使用强有力的动词开头（如：主导、负责、设计、实现、优化、构建）
+- 避免弱化词（如：参与、协助、了解、熟悉）
+- 删除冗余词汇，保留核心信息
+
+### 2. 成就量化
+- 量化工作成果（使用具体数字和百分比）
+- 突出业绩和贡献
+- 对比改进前后的差异
+
+### 3. 关键词增强
+- 添加技术关键词，提升 ATS 系统通过率
+- 突出核心技术能力
+- 使用行业标准术语
+
+### 4. 专业表达
+- 使用专业的中文表达
+- 保持简洁，每条描述控制在50字以内
+- 数据和成果放前面
+
+---
+
+## 输出格式（严格按 JSON 返回）
+
+{{
+    "optimized": "优化后的内容",
+    "improvements": [
+        {{"type": "wording|quantify|keywords", "before": "原文", "after": "修改后", "reason": "原因"}}
+    ]
+}}
+
+只返回 JSON，不要有其他内容。"""
 
     async def _call_api(self, prompt: str) -> str:
         """调用 MiniMax API
@@ -515,3 +590,333 @@ async def optimize_resume(
     与 Go 版本的 OptimizeWithAI 函数对应
     """
     return await ai_service.optimize_resume(resume_data, optim_type, target)
+
+
+async def optimize_single_content(
+    content: str,
+    content_type: str,
+    optimize_type: str = "all"
+) -> Dict[str, Any]:
+    """优化单条简历内容
+
+    Args:
+        content: 要优化的内容文本
+        content_type: 内容类型 (work_experience, project, education, award)
+        optimize_type: 优化类型 (wording, keywords, quantify, all)
+
+    Returns:
+        {
+            "original": str,  # 原文
+            "optimized": str, # 优化后内容
+            "changes": List[str] # 优化点说明
+        }
+    """
+    # 内容类型配置
+    type_config = {
+        "work_experience": {
+            "label": "工作经历",
+            "focus": "职责、成就、技术贡献",
+            "strategy": "突出个人贡献，量化成果，使用STAR法则描述"
+        },
+        "project": {
+            "label": "项目经验",
+            "focus": "项目亮点、个人角色、技术实现",
+            "strategy": "突出项目难点和个人创新，使用技术术语"
+        },
+        "education": {
+            "label": "教育背景",
+            "focus": "学术成就、专业相关课程",
+            "strategy": "简化学历描述，突出与职位相关的部分"
+        },
+        "award": {
+            "label": "荣誉奖项",
+            "focus": "奖项级别、获奖难度、竞争人数",
+            "strategy": "突出奖项含金量，量化竞争规模"
+        },
+    }
+
+    config = type_config.get(content_type, {
+        "label": "简历内容",
+        "focus": "内容优化",
+        "strategy": "专业、简洁、有吸引力"
+    })
+
+    # 优化类型配置
+    optimize_config = {
+        "wording": {
+            "title": "措辞优化",
+            "instructions": [
+                "使用强有力的动词开头（主导、负责、设计、实现、优化、构建）",
+                "避免弱化词（参与、协助、了解、熟悉）",
+                "删除冗余词汇，保留核心信息",
+                "每条描述控制在50字以内"
+            ]
+        },
+        "keywords": {
+            "title": "关键词增强",
+            "instructions": [
+                "添加技术关键词，提升ATS通过率",
+                "突出核心技术能力（React, Node.js, Python等）",
+                "使用行业标准术语",
+                "避免堆砌关键词"
+            ]
+        },
+        "quantify": {
+            "title": "成就量化",
+            "instructions": [
+                "量化工作成果（使用具体数字和百分比）",
+                "突出业绩和贡献（如：提升50%性能）",
+                "对比改进前后的差异",
+                "数据放前面，成果放明显位置"
+            ]
+        },
+        "all": {
+            "title": "综合优化",
+            "instructions": [
+                "措辞优化：使用强动词，专业简洁",
+                "关键词增强：添加技术关键词，提升ATS通过率",
+                "成就量化：量化成果，突出业绩",
+                "数据和成果放前面"
+            ]
+        },
+    }
+
+    opt_cfg = optimize_config.get(optimize_type, optimize_config["all"])
+
+    prompt = f"""你是一位专业的简历优化专家，擅长帮助程序员提升简历质量。你有10年以上互联网行业 HR 和技术面试官经验。
+
+## 优化任务
+优化以下 {config['label']} 的描述。
+
+## 内容类型
+{config['label']} - 重点关注：{config['focus']}
+
+## 优化策略
+{config['strategy']}
+
+## 优化类型
+{opt_cfg['title']}
+
+## 优化指令
+{" ".join(opt_cfg['instructions'])}
+
+## 原始内容
+---
+{content}
+---
+
+## 输出格式（严格按 JSON 返回，不要有其他内容）
+
+{{
+    "optimized": "优化后的内容（保持原有格式，用换行分隔多条）",
+    "changes": [
+        {{"type": "wording|quantify|keywords", "before": "原文片段", "after": "修改后片段", "reason": "修改原因"}}
+    ],
+    "tips": ["后续改进建议1", "后续改进建议2"]
+}}
+
+---
+
+## 注意事项
+1. 优化后的内容要保持原意，不能添加虚假信息
+2. 每条 changes 说明一个具体的优化点
+3. 量化数据要合理，不要夸大
+4. 只返回 JSON，不要有 markdown 代码块或任何其他内容"""
+
+    try:
+        result = await ai_service._call_api(prompt)
+
+        # 尝试解析 JSON
+        import re
+        # 去除可能的 markdown 代码块
+        json_str = result.strip()
+        if json_str.startswith("```"):
+            json_str = re.sub(r'^```json\s*', '', json_str, flags=re.MULTILINE)
+            json_str = re.sub(r'\s*```$', '', json_str, flags=re.MULTILINE)
+
+        optimized_data = json.loads(json_str)
+
+        return {
+            "success": True,
+            "original": content,
+            "optimized": optimized_data.get("optimized", content),
+            "changes": optimized_data.get("changes", [])
+        }
+
+    except json.JSONDecodeError as e:
+        # JSON 解析失败，返回原文作为优化结果
+        return {
+            "success": True,
+            "original": content,
+            "optimized": content,
+            "changes": ["内容已保留，未做修改"]
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e),
+            "original": content,
+            "optimized": content,
+            "changes": []
+        }
+
+
+async def optimize_full_resume(resume_data: Dict[str, Any]) -> Dict[str, Any]:
+    """一键优化整份简历
+
+    Args:
+        resume_data: 完整的简历数据
+
+    Returns:
+        {
+            "optimized": dict,  # 优化后的简历数据
+            "summary": List[str] # 优化摘要
+        }
+    """
+    # 提取各部分数据
+    personal_info = resume_data.get("personal_info", {})
+    work_experience = resume_data.get("work_experience", [])
+    projects = resume_data.get("projects", [])
+    education = resume_data.get("education", [])
+    skills = resume_data.get("skills", [])
+    awards = resume_data.get("awards", [])
+
+    # 构建 prompt
+    prompt = f"""你是一位专业的简历优化专家，擅长帮助程序员提升简历质量。你有10年以上互联网行业 HR 和技术面试官经验。
+
+## 简历数据
+
+### 个人信息
+姓名: {personal_info.get('name', '')}
+职位: {personal_info.get('title', '')}
+简介: {personal_info.get('summary', '')}
+
+### 工作经历
+{json.dumps(work_experience, ensure_ascii=False, indent=2)}
+
+### 项目经验
+{json.dumps(projects, ensure_ascii=False, indent=2)}
+
+### 教育背景
+{json.dumps(education, ensure_ascii=False, indent=2)}
+
+### 技能
+{json.dumps(skills, ensure_ascii=False, indent=2)}
+
+### 荣誉奖项
+{json.dumps(awards, ensure_ascii=False, indent=2)}
+
+---
+
+## 优化策略
+
+### 工作经历优化
+- 使用 STAR 法则描述（Situation, Task, Action, Result）
+- 开头用强动词，突出个人贡献（主导、负责、设计、实现）
+- 量化成果，使用具体数字（如：提升50%性能，服务100万用户）
+- 按重要程度排序，最重要的放前面
+
+### 项目经验优化
+- 突出项目亮点和个人贡献
+- 包含技术栈、规模、成果
+- 用数据说话（如：处理日均1000万请求）
+- 说明个人在项目中的角色和价值
+
+### 教育背景优化
+- 突出与职位相关的课程和项目
+- 简化学历描述，重点放在技术能力上
+- 研究生可简化学历，本科以上保留
+
+### 技能描述优化
+- 按精通/熟悉/了解分层
+- 添加热门技术关键词
+- 突出与目标职位的匹配度
+
+---
+
+## 输出格式（严格按 JSON 返回，不要有其他内容）
+
+{{
+    "optimized": {{
+        "personal_info": {personal_info.get('name', '')} 的个人信息,
+        "work_experience": [
+            {{
+                "company": "公司名",
+                "position": "职位",
+                "description": "优化后的描述（STAR法则）",
+                "achievements": ["成就1（量化）", "成就2（量化）"]
+            }}
+        ],
+        "projects": [
+            {{
+                "name": "项目名",
+                "role": "角色",
+                "description": "优化后的描述",
+                "technologies": ["技术栈"],
+                "highlights": ["亮点1（量化）", "亮点2"]
+            }}
+        ],
+        "education": [
+            {{
+                "school": "学校名",
+                "degree": "学位",
+                "field": "专业",
+                "description": "优化后的描述（突出相关课程和项目）"
+            }}
+        ],
+        "skills": ["技能1（精通）", "技能2（熟悉）", "技能3"],
+        "awards": [
+            {{
+                "title": "奖项名",
+                "description": "优化后的描述（量化竞争规模）"
+            }}
+        ]
+    }},
+    "summary": [
+        "优化摘要1（如：工作经历量化了成果）",
+        "优化摘要2（如：项目经验突出了技术亮点）",
+        "优化摘要3（如：技能补充了热门关键词）"
+    ],
+    "overall_improvement": "整体改进说明（50字以内）"
+}}
+
+---
+
+## 注意事项
+1. 只优化有内容的部分，空内容保持原样
+2. 不要添加虚假信息或夸大成就
+3. 返回完整格式的 JSON
+4. 只返回 JSON，不要有 markdown 代码块或任何其他内容"""
+
+    try:
+        result = await ai_service._call_api(prompt)
+
+        # 尝试解析 JSON
+        import re
+        json_str = result.strip()
+        if json_str.startswith("```"):
+            json_str = re.sub(r'^```json\s*', '', json_str, flags=re.MULTILINE)
+            json_str = re.sub(r'\s*```$', '', json_str, flags=re.MULTILINE)
+
+        optimized_data = json.loads(json_str)
+
+        return {
+            "success": True,
+            "optimized": optimized_data.get("optimized", resume_data),
+            "summary": optimized_data.get("summary", ["已完成简历优化"])
+        }
+
+    except json.JSONDecodeError as e:
+        return {
+            "success": False,
+            "error": f"JSON 解析失败: {str(e)}",
+            "optimized": resume_data,
+            "summary": ["优化失败，保持原样"]
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e),
+            "optimized": resume_data,
+            "summary": ["优化失败，保持原样"]
+        }
