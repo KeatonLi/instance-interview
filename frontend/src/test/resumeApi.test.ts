@@ -143,4 +143,133 @@ describe('resumeApi', () => {
       );
     });
   });
+
+  describe('optimizeContent', () => {
+    it('should call optimize API with content and type', async () => {
+      const mockResponse = {
+        code: 0,
+        data: {
+          original: '原内容',
+          optimized: '优化后内容',
+          changes: ['措辞优化', '量化成果']
+        }
+      };
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(mockResponse),
+      });
+
+      const result = await resumeApi.optimizeContent('测试工作经历内容', 'work_experience');
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('/resumes/optimize'),
+        expect.objectContaining({ method: 'POST' })
+      );
+      expect(result.code).toBe(0);
+      expect(result.data.optimized).toBe('优化后内容');
+    });
+
+    it('should handle optimize different content types', async () => {
+      const mockResponse = {
+        code: 0,
+        data: {
+          original: '项目描述',
+          optimized: '优化后的项目描述',
+          changes: ['关键词增强']
+        }
+      };
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(mockResponse),
+      });
+
+      const result = await resumeApi.optimizeContent('项目描述内容', 'project');
+
+      expect(result.code).toBe(0);
+      expect(result.data.changes).toContain('关键词增强');
+    });
+  });
+
+  describe('optimizeFull', () => {
+    it('should call optimize-full API with resume data', async () => {
+      const mockResponse = {
+        code: 0,
+        data: {
+          optimized: {
+            personalInfo: { name: '张三', title: '前端工程师' },
+            workExperience: [],
+            projects: [],
+            education: [],
+            skills: [],
+            awards: [],
+            languages: []
+          },
+          summary: ['措辞已优化', '成就已量化']
+        }
+      };
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(mockResponse),
+      });
+
+      const resumeData = {
+        personalInfo: { name: '张三', title: '前端工程师', email: '', phone: '', location: '', linkedin: '', github: '', website: '', summary: '' },
+        workExperience: [{ id: '1', company: 'ABC', position: '工程师', description: '负责开发', startDate: '', endDate: '', current: false, achievements: [] }],
+        projects: [],
+        education: [],
+        skills: [],
+        awards: [],
+        languages: []
+      };
+
+      const result = await resumeApi.optimizeFull(resumeData);
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('/resumes/optimize-full'),
+        expect.objectContaining({ method: 'POST' })
+      );
+      expect(result.code).toBe(0);
+      expect(result.data.summary).toContain('措辞已优化');
+    });
+
+    it('should handle empty resume data', async () => {
+      const mockResponse = {
+        code: 0,
+        data: {
+          optimized: {
+            personalInfo: {},
+            workExperience: [],
+            projects: [],
+            education: [],
+            skills: [],
+            awards: [],
+            languages: []
+          },
+          summary: ['简历为空，无内容可优化']
+        }
+      };
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(mockResponse),
+      });
+
+      const emptyData = {
+        personalInfo: { name: '', title: '', email: '', phone: '', location: '', linkedin: '', github: '', website: '', summary: '' },
+        workExperience: [],
+        projects: [],
+        education: [],
+        skills: [],
+        awards: [],
+        languages: []
+      };
+
+      const result = await resumeApi.optimizeFull(emptyData);
+
+      expect(result.code).toBe(0);
+    });
+  });
 });
