@@ -167,7 +167,7 @@ mkdir -p "$REMOTE_DIR"
 cd "$REMOTE_DIR"
 
 echo "=== 当前进程状态 ==="
-ps aux | grep -E "(uvicorn|serve.*frontend-dist|main:app)" | grep -v grep || echo "未找到相关进程"
+ps aux | grep -E "(uvicorn|node.*server\.js|main:app)" | grep -v grep || echo "未找到相关进程"
 
 echo "=== 停止现有服务 ==="
 if [ -f "backend.pid" ]; then
@@ -209,7 +209,11 @@ if [ -f "frontend.log" ]; then
   mv frontend.log "frontend.log.$(date +%Y%m%d_%H%M%S)" 2>/dev/null || true
 fi
 
-echo "=== 服务器环境准备完成 ==="
+echo "=== 安装 PDF 生成依赖 (WeasyPrint) ==="
+	apt-get update -qq && apt-get install -y -qq libpango-1.0-0 libpangocairo-1.0-0 libgdk-pixbuf2.0-0 libffi-dev > /dev/null 2>&1
+	echo "系统依赖安装完成"
+
+	echo "=== 服务器环境准备完成 ==="
 EOF
 
   echo -e "${GREEN}服务器环境准备完成${NC}"
@@ -225,6 +229,7 @@ upload_files() {
   remote_scp -r "backend" "$SERVER_USER@$SERVER_HOST:$REMOTE_DIR/"
 
   echo -e "${YELLOW}上传前端文件...${NC}"
+  cp frontend/server.js frontend/dist/server.js
   remote_scp -r "frontend/dist" "$SERVER_USER@$SERVER_HOST:$REMOTE_DIR/frontend-dist"
 
   if [ -f "backend/.env" ]; then
@@ -265,8 +270,6 @@ cd backend
 pip3 install -r requirements.txt --quiet
 cd ..
 
-which serve >/dev/null 2>&1 || npm install -g serve
-
 echo "启动后端服务..."
 export RESUME_DB_HOST="${RESUME_DB_HOST:-localhost}"
 export RESUME_DB_PORT="${RESUME_DB_PORT:-13306}"
@@ -291,7 +294,7 @@ echo "后端服务已启动，PID: $BACKEND_PID"
 
 echo "启动前端服务..."
 cd frontend-dist
-nohup serve -s . -p 3001 > ../frontend.log 2>&1 &
+nohup node server.js > ../frontend.log 2>&1 &
 FRONTEND_PID=$!
 echo "$FRONTEND_PID" > ../frontend.pid
 echo "前端服务已启动，PID: $FRONTEND_PID"
@@ -337,7 +340,7 @@ if [ "$FRONTEND_OK" -ne 1 ]; then
 fi
 
 echo "最终进程状态:"
-ps aux | grep -E "(uvicorn|serve)" | grep -v grep || echo "未找到匹配的进程"
+ps aux | grep -E "(uvicorn|node.*server\.js)" | grep -v grep || echo "未找到匹配的进程"
 
 echo "监听端口:"
 netstat -tlnp | grep -E ":8082|:3001" || ss -tlnp | grep -E ":8082|:3001" || echo "端口检查不可用"

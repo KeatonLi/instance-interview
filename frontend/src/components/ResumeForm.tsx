@@ -209,10 +209,13 @@ const ResumeForm: React.FC<ResumeFormProps> = ({ data, setData, onOptimize }) =>
   };
 
   return (
-    <div className="space-y-4">
-      {/* Personal Info - 紧凑 */}
-      <div className="bg-slate-50 rounded-lg p-4">
-        <h3 className="text-sm font-semibold text-slate-700 mb-3">个人信息</h3>
+    <div className="space-y-3">
+      {/* ── 个人信息 ── */}
+      <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden">
+        <div className="border-l-[3px] border-blue-500 pl-3 py-3 pr-4 bg-slate-50/50">
+          <h3 className="text-sm font-semibold text-slate-700">个人信息</h3>
+        </div>
+        <div className="p-4">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <div className="space-y-1">
             <Label className="text-xs text-slate-500">姓名 *</Label>
@@ -299,19 +302,25 @@ const ResumeForm: React.FC<ResumeFormProps> = ({ data, setData, onOptimize }) =>
           />
         </div>
       </div>
+      </div>
 
+      {/* ── 工作/教育/项目/技能 ── */}
       <Tabs defaultValue="experience" className="w-full">
-        <TabsList className="grid w-full grid-cols-4 h-9">
-          <TabsTrigger value="experience" className="text-xs">工作经验</TabsTrigger>
-          <TabsTrigger value="education" className="text-xs">教育背景</TabsTrigger>
-          <TabsTrigger value="projects" className="text-xs">项目经历</TabsTrigger>
-          <TabsTrigger value="skills" className="text-xs">技能专长</TabsTrigger>
+        <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden">
+        <div className="border-l-[3px] border-indigo-500 pl-3 py-2.5 pr-4 bg-slate-50/50">
+          <TabsList className="grid w-full grid-cols-4 h-8 bg-transparent gap-1">
+          <TabsTrigger value="experience" className="text-xs data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-indigo-700 text-slate-500">工作经验</TabsTrigger>
+          <TabsTrigger value="education" className="text-xs data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-indigo-700 text-slate-500">教育背景</TabsTrigger>
+          <TabsTrigger value="projects" className="text-xs data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-indigo-700 text-slate-500">项目经历</TabsTrigger>
+          <TabsTrigger value="skills" className="text-xs data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-indigo-700 text-slate-500">技能专长</TabsTrigger>
         </TabsList>
+        </div>
 
-        <TabsContent value="experience" className="mt-3">
-          <div className="space-y-2">
+        <div className="p-4">
+        <TabsContent value="experience" className="mt-0">
+          <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-slate-600">工作经验</span>
+              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">工作经验</span>
               <Button size="sm" variant="outline" onClick={addWorkExperience} className="h-7 text-xs">
                 <Plus size={12} className="mr-1" /> 添加
               </Button>
@@ -375,10 +384,10 @@ const ResumeForm: React.FC<ResumeFormProps> = ({ data, setData, onOptimize }) =>
           </div>
         </TabsContent>
 
-        <TabsContent value="education" className="mt-3">
-          <div className="space-y-2">
+        <TabsContent value="education" className="mt-0">
+          <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-slate-600">教育背景</span>
+              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">教育背景</span>
               <Button size="sm" variant="outline" onClick={addEducation} className="h-7 text-xs">
                 <Plus size={12} className="mr-1" /> 添加
               </Button>
@@ -427,10 +436,10 @@ const ResumeForm: React.FC<ResumeFormProps> = ({ data, setData, onOptimize }) =>
           </div>
         </TabsContent>
 
-        <TabsContent value="projects" className="mt-3">
-          <div className="space-y-2">
+        <TabsContent value="projects" className="mt-0">
+          <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-slate-600">项目经历</span>
+              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">项目经历</span>
               <Button size="sm" variant="outline" onClick={addProject} className="h-7 text-xs">
                 <Plus size={12} className="mr-1" /> 添加
               </Button>
@@ -498,10 +507,10 @@ const ResumeForm: React.FC<ResumeFormProps> = ({ data, setData, onOptimize }) =>
           </div>
         </TabsContent>
 
-        <TabsContent value="skills" className="mt-3">
-          <div className="space-y-2">
+        <TabsContent value="skills" className="mt-0">
+          <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-slate-600">技能专长</span>
+              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">技能专长</span>
               <Button size="sm" variant="outline" onClick={addSkill} className="h-7 text-xs">
                 <Plus size={12} className="mr-1" /> 添加
               </Button>
@@ -532,19 +541,24 @@ const ResumeForm: React.FC<ResumeFormProps> = ({ data, setData, onOptimize }) =>
             ))}
           </div>
         </TabsContent>
+        </div>
+      </div>
       </Tabs>
 
-      {/* Awards - 紧凑 */}
-      <div className="bg-slate-50 rounded-lg p-4">
-        <div className="flex items-center justify-between mb-3">
+      {/* ── 荣誉奖项 ── */}
+      <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden">
+        <div className="border-l-[3px] border-amber-500 pl-3 py-2.5 pr-4 bg-slate-50/50">
+          <div className="flex items-center justify-between">
           <span className="text-sm font-semibold text-slate-700">荣誉奖项</span>
           <Button size="sm" variant="outline" onClick={addAward} className="h-7 text-xs">
             <Plus size={12} className="mr-1" /> 添加
           </Button>
+          </div>
         </div>
-        <div className="space-y-2">
+        <div className="p-4">
+        <div className="space-y-3">
           {data.awards.map((award) => (
-            <div key={award.id} className="border border-slate-200 rounded-lg p-2 space-y-2 bg-white">
+            <div key={award.id} className="border border-slate-200 rounded-lg p-3 space-y-2 bg-white">
               <div className="flex items-start justify-between gap-2">
                 <div className="grid grid-cols-2 gap-2 flex-1">
                   <div className="space-y-1">
@@ -573,19 +587,23 @@ const ResumeForm: React.FC<ResumeFormProps> = ({ data, setData, onOptimize }) =>
             </div>
           ))}
         </div>
+        </div>
       </div>
 
-      {/* Languages - 紧凑 */}
-      <div className="bg-slate-50 rounded-lg p-4">
-        <div className="flex items-center justify-between mb-3">
+      {/* ── 语言能力 ── */}
+      <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden">
+        <div className="border-l-[3px] border-emerald-500 pl-3 py-2.5 pr-4 bg-slate-50/50">
+          <div className="flex items-center justify-between">
           <span className="text-sm font-semibold text-slate-700">语言能力</span>
           <Button size="sm" variant="outline" onClick={addLanguage} className="h-7 text-xs">
             <Plus size={12} className="mr-1" /> 添加
           </Button>
+          </div>
         </div>
-        <div className="space-y-2">
+        <div className="p-4">
+        <div className="space-y-3">
           {data.languages.map((lang) => (
-            <div key={lang.id} className="border border-slate-200 rounded-lg p-2 bg-white">
+            <div key={lang.id} className="border border-slate-200 rounded-lg p-3 bg-white">
               <div className="flex items-start justify-between gap-2">
                 <div className="grid grid-cols-2 gap-2 flex-1">
                   <div className="space-y-1">
@@ -603,6 +621,7 @@ const ResumeForm: React.FC<ResumeFormProps> = ({ data, setData, onOptimize }) =>
               </div>
             </div>
           ))}
+        </div>
         </div>
       </div>
     </div>

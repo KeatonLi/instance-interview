@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { resumeApi } from '@/lib/resumes';
@@ -12,29 +12,80 @@ import {
   Eye,
   FileText,
   Loader2,
-  PanelRight,
-  RotateCcw,
-  Sparkles,
   X,
-  BookOpen,
-  Maximize2,
-  Minimize2,
 } from 'lucide-react';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
 import type { ResumeData } from '@/types/resume';
 import { defaultResumeData } from '@/types/resume';
 import { themes } from '@/styles/resumeThemes';
-import { sampleResumeData } from '@/lib/sampleResumeData';
-import { parseResumeData, sanitizeResumeFilename } from '@/lib/resumeData';
+import { parseResumeData } from '@/lib/resumeData';
 import ResumeForm from '@/components/ResumeForm';
 import ResumePreview from '@/components/ResumePreview';
-import PDFDownloader from '@/components/PDFDownloader';
 import EditorToolbar from '@/components/EditorToolbar';
 import OptimizeDialog from '@/components/OptimizeDialog';
+
+// ─── 预览面板 — 动态缩放 ────────────────────────────────────────
+
+const RESUME_W = 540;
+const RESUME_H = 766;
+
+const PreviewPanel: React.FC<{ data: ResumeData; themeId: number }> = ({ data, themeId }) => {
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(0.5);
+
+  const measure = useCallback(() => {
+    if (wrapperRef.current) {
+      const w = wrapperRef.current.getBoundingClientRect().width;
+      const h = wrapperRef.current.getBoundingClientRect().height;
+      if (w > 0 && h > 0) {
+        const s = Math.min(w / RESUME_W, h / RESUME_H);
+        if (s > 0 && isFinite(s)) setScale(s);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    measure();
+    const ro = new ResizeObserver(measure);
+    if (wrapperRef.current) ro.observe(wrapperRef.current);
+    return () => ro.disconnect();
+  }, [measure]);
+
+  return (
+    <div ref={wrapperRef} className="flex-1 overflow-auto p-3 flex items-start justify-center bg-[#f1f5f9]">
+      <div className="flex-shrink-0" style={{ width: RESUME_W * scale, height: RESUME_H * scale }}>
+        <ResumePreview data={data} themeId={themeId} scale={scale} />
+      </div>
+    </div>
+  );
+};
+
+// ─── 错误边界 ────────────────────────────────────────────────────
+
+class EditorErrorBoundary extends React.Component<{ children: React.ReactNode }, { error: Error | null }> {
+  state = { error: null as Error | null };
+  static getDerivedStateFromError(e: Error) { return { error: e }; }
+  render() {
+    if (this.state.error) {
+      return (
+        <div className="min-h-screen bg-slate-50 flex items-center justify-center p-8">
+          <div className="max-w-md text-center">
+            <div className="w-14 h-14 bg-red-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <FileText className="w-7 h-7 text-red-500" />
+            </div>
+            <h2 className="text-lg font-bold text-slate-700 mb-2">页面加载出错</h2>
+            <p className="text-sm text-slate-500 mb-4">{this.state.error.message}</p>
+            <Button onClick={() => { this.setState({ error: null }); window.location.reload(); }} size="sm" className="h-9 text-xs">
+              重新加载
+            </Button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+// ─── 编辑器主页面 ────────────────────────────────────────────────
 
 const EditorPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -191,18 +242,6 @@ const EditorPage: React.FC = () => {
     }
   }, [id]);
 
-  const loadSampleData = () => {
-    safeSetResumeData(sampleResumeData);
-    setHasChanges(true);
-  };
-
-  const resetData = () => {
-    if (confirm('确定要清空所有内容吗？此操作不可撤销。')) {
-      safeSetResumeData(defaultResumeData);
-      setHasChanges(true);
-    }
-  };
-
   // 优化单条内容
   const handleOptimizeContent = async (content: string, type: string) => {
     const res = await resumeApi.optimizeContent(content, type);
@@ -229,7 +268,8 @@ const EditorPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-100/50">
+    <EditorErrorBoundary>
+    <div className="h-[calc(100vh-3.5rem)] flex flex-col bg-slate-100/50">
       {/* 顶部工具栏 */}
       <EditorToolbar
         title={resumeTitle}
@@ -242,163 +282,27 @@ const EditorPage: React.FC = () => {
         onThemeChange={handleThemeChange}
         onSave={handleSave}
         onBack={() => navigate('/resumes')}
+        onFullOptimize={() => setOptimizeDialogOpen(true)}
+        previewMode={previewMode}
+        onPreviewModeChange={setPreviewMode}
       />
 
-      {/* 工具栏 - AI 优化按钮 */}
-      <div className="sticky top-14 z-40 bg-white/80 backdrop-blur-xl border-b border-slate-200/60">
-        <div className="max-w-[1800px] mx-auto px-4 py-2.5">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              {/* 模板选择快捷栏 */}
-              <div className="flex items-center gap-2">
-                <BookOpen className="w-4 h-4 text-blue-500" />
-                <span className="text-xs font-medium text-slate-500">模板：</span>
-                <div className="flex items-center gap-1.5">
-                  {themes.map((theme, index) => (
-                    <Tooltip key={index}>
-                      <TooltipTrigger asChild>
-                        <button
-                          onClick={() => handleThemeChange(index)}
-                          className={`w-6 h-6 rounded border-2 transition-all ${
-                            themeId === index ? 'border-blue-500 scale-110' : 'border-transparent hover:scale-105'
-                          }`}
-                          style={{
-                            background: theme.colors.header,
-                            border: theme.colors.border === '#e5e7eb' ? '1px solid #e5e7eb' : 'none'
-                          }}
-                        />
-                      </TooltipTrigger>
-                      <TooltipContent>{theme.name}</TooltipContent>
-                    </Tooltip>
-                  ))}
-                </div>
-              </div>
-
-              <div className="h-4 w-px bg-slate-200" />
-
-              {/* 简历统计 */}
-              <div className="hidden md:flex items-center gap-4 text-xs text-slate-400">
-                {resumeData.workExperience.length > 0 && (
-                  <span>{resumeData.workExperience.length} 条工作经历</span>
-                )}
-                {resumeData.projects.length > 0 && (
-                  <span>{resumeData.projects.length} 个项目</span>
-                )}
-                {resumeData.education.length > 0 && (
-                  <span>{resumeData.education.length} 条教育经历</span>
-                )}
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2">
-              {/* 示例数据 */}
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={loadSampleData}
-                    className="h-8 px-3 text-xs text-slate-500 hover:text-slate-900 hover:bg-slate-100"
-                  >
-                    <Sparkles className="w-3.5 h-3.5 mr-1.5" />
-                    示例
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>加载示例数据</TooltipContent>
-              </Tooltip>
-
-              {/* 重置 */}
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={resetData}
-                    className="h-8 px-3 text-xs text-slate-500 hover:text-red-600 hover:bg-red-50"
-                  >
-                    <RotateCcw className="w-3.5 h-3.5 mr-1.5" />
-                    重置
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>清空所有内容</TooltipContent>
-              </Tooltip>
-
-              <div className="h-4 w-px bg-slate-200 mx-1" />
-
-              {/* 预览模式切换 */}
-              <div className="flex items-center bg-slate-100 rounded-lg p-0.5">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant={previewMode === 'split' ? 'default' : 'ghost'}
-                      size="sm"
-                      onClick={() => setPreviewMode('split')}
-                      className={`h-7 px-2.5 text-xs ${previewMode === 'split' ? 'bg-blue-600 hover:bg-blue-700' : 'text-slate-500 hover:text-slate-700'}`}
-                    >
-                      <PanelRight className="w-3.5 h-3.5" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>分屏显示</TooltipContent>
-                </Tooltip>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant={previewMode === 'full' ? 'default' : 'ghost'}
-                      size="sm"
-                      onClick={() => setPreviewMode('full')}
-                      className={`h-7 px-2.5 text-xs ${previewMode === 'full' ? 'bg-blue-600 hover:bg-blue-700' : 'text-slate-500 hover:text-slate-700'}`}
-                    >
-                      <Maximize2 className="w-3.5 h-3.5" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>全屏预览</TooltipContent>
-                </Tooltip>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant={previewMode === 'hidden' ? 'default' : 'ghost'}
-                      size="sm"
-                      onClick={() => setPreviewMode('hidden')}
-                      className={`h-7 px-2.5 text-xs ${previewMode === 'hidden' ? 'bg-blue-600 hover:bg-blue-700' : 'text-slate-500 hover:text-slate-700'}`}
-                    >
-                      <Minimize2 className="w-3.5 h-3.5" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>隐藏预览</TooltipContent>
-                </Tooltip>
-              </div>
-
-              {/* PDF 下载 */}
-              <PDFDownloader
-                resumeId={id ? parseInt(id) : undefined}
-                filename={sanitizeResumeFilename(resumeTitle || resumeData.personalInfo.name || 'resume')}
-                className="h-8 px-3 text-xs border-slate-300"
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* 主内容区 - 可调节分屏布局 */}
-      <main className="pt-24 min-h-screen">
-        <ResizablePanelGroup direction="horizontal" className="min-h-[calc(100vh-8rem)]">
+      {/* 主内容区 */}
+      <div className="flex-1 flex flex-col min-h-0">
+        <ResizablePanelGroup direction="horizontal" className="flex-1 min-h-0">
           {/* 编辑面板 */}
           {previewMode !== 'hidden' && (
             <ResizablePanel
-              defaultSize={previewMode === 'full' ? 0 : 60}
+              defaultSize={previewMode === 'full' ? 0 : 55}
               minSize={30}
               className="transition-all duration-300"
             >
-              <div className="h-full overflow-auto p-4 lg:p-6">
-                <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
-                  <div className="p-4 lg:p-6">
-                    <div className="max-w-3xl mx-auto">
-                      <ResumeForm
-                        data={resumeData}
-                        setData={handleDataChange}
-                      />
-                    </div>
-                  </div>
+              <div className="h-full overflow-auto p-3 lg:p-4">
+                <div className="max-w-3xl mx-auto">
+                  <ResumeForm
+                    data={resumeData}
+                    setData={handleDataChange}
+                  />
                 </div>
               </div>
             </ResizablePanel>
@@ -406,7 +310,7 @@ const EditorPage: React.FC = () => {
 
           {/* 可调节分割线 */}
           {previewMode === 'split' && (
-            <ResizableHandle withHandle className="w-2 bg-transparent hover:bg-blue-500/20 transition-colors" />
+            <ResizableHandle withHandle className="w-2 bg-transparent hover:bg-blue-200/40 transition-colors" />
           )}
 
           {/* 预览面板 */}
@@ -418,37 +322,28 @@ const EditorPage: React.FC = () => {
             >
               <div className="h-full bg-slate-50/50 border-l border-slate-200/80 flex flex-col">
                 {/* 预览头部 */}
-                <div className="px-4 py-3 bg-white border-b border-slate-200/80 flex items-center justify-between flex-shrink-0">
+                <div className="px-3 py-2 bg-white/80 backdrop-blur-sm border-b border-slate-200/60 flex items-center justify-between flex-shrink-0">
                   <div className="flex items-center gap-2">
-                    <Eye className="w-4 h-4 text-blue-500" />
-                    <span className="text-xs font-semibold text-slate-700">实时预览</span>
-                    <span className="text-[10px] text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">
-                      {themes[themeId]?.name}
-                    </span>
+                    <Eye className="w-3.5 h-3.5 text-slate-400" />
+                    <span className="text-[11px] font-medium text-slate-500">预览</span>
+                    <span className="text-[10px] text-slate-400">· {themes[themeId]?.name}</span>
                   </div>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => setPreviewMode('hidden')}
-                    className="h-7 w-7 p-0 text-slate-400 hover:text-slate-600"
+                    className="h-6 w-6 p-0 text-slate-400 hover:text-slate-600"
                   >
-                    <X className="w-4 h-4" />
+                    <X className="w-3.5 h-3.5" />
                   </Button>
                 </div>
 
-                {/* 预览内容 */}
-                <div className="flex-1 overflow-auto p-4 bg-[#f1f5f9]">
-                  <div className="flex justify-center items-start min-h-full">
-                    <div className="shadow-2xl shadow-black/10 rounded-lg overflow-hidden transform origin-top scale-[0.55] md:scale-[0.65] lg:scale-[0.75]">
-                      <ResumePreview data={resumeData} themeId={themeId} />
-                    </div>
-                  </div>
-                </div>
+                <PreviewPanel data={resumeData} themeId={themeId} />
               </div>
             </ResizablePanel>
           )}
         </ResizablePanelGroup>
-      </main>
+      </div>
 
       {/* 浮动预览切换按钮 */}
       {previewMode === 'hidden' && (
@@ -475,6 +370,7 @@ const EditorPage: React.FC = () => {
         onOptimize={handleOptimizeContent}
       />
     </div>
+    </EditorErrorBoundary>
   );
 };
 

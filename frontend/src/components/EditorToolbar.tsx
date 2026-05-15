@@ -1,7 +1,12 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Check, Loader2, Pencil } from 'lucide-react';
+import { Check, Loader2, Pencil, Sparkles, Maximize2, Minimize2, PanelRight } from 'lucide-react';
 import { themes } from '@/styles/resumeThemes';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 interface EditorToolbarProps {
   title: string;
@@ -14,6 +19,10 @@ interface EditorToolbarProps {
   onThemeChange: (id: number) => void;
   onSave: () => void;
   onBack: () => void;
+  onFullOptimize?: () => void;
+  onOptimizeContent?: (content: string, type: string) => void;
+  previewMode?: 'split' | 'full' | 'hidden';
+  onPreviewModeChange?: (mode: 'split' | 'full' | 'hidden') => void;
 }
 
 // 模板选择器
@@ -124,7 +133,10 @@ export default function EditorToolbar({
   onTitleChange,
   onThemeChange,
   onSave,
-  onBack
+  onBack,
+  onFullOptimize,
+  previewMode,
+  onPreviewModeChange,
 }: EditorToolbarProps) {
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [titleInput, setTitleInput] = useState(title);
@@ -146,80 +158,108 @@ export default function EditorToolbar({
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-b border-slate-200/80 shadow-sm">
+    <header className="sticky top-0 z-30 bg-white/90 backdrop-blur-lg border-b border-slate-200/60">
       <div className="max-w-[1800px] mx-auto px-4">
-        <div className="flex items-center justify-between h-14">
+        <div className="flex items-center justify-between h-12">
           {/* 左侧 - 返回和标题 */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <Button
               variant="ghost"
               size="sm"
               onClick={onBack}
-              className="h-8 px-2.5 text-slate-500 hover:text-slate-900 hover:bg-slate-100"
+              className="h-7 w-7 p-0 text-slate-400 hover:text-slate-700 hover:bg-slate-100"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
             </Button>
 
-            <div className="h-5 w-px bg-slate-200" />
+            {isEditingTitle ? (
+              <input
+                type="text"
+                value={titleInput}
+                onChange={(e) => setTitleInput(e.target.value)}
+                onBlur={handleTitleBlur}
+                onKeyDown={handleTitleKeyDown}
+                autoFocus
+                className="h-7 w-44 text-sm font-semibold bg-slate-100 border border-blue-300 rounded px-2 outline-none focus:ring-2 focus:ring-blue-500/20"
+              />
+            ) : (
+              <button
+                onClick={() => { setTitleInput(title); setIsEditingTitle(true); }}
+                className="flex items-center gap-1 h-7 px-2 rounded hover:bg-slate-100 transition-colors group"
+              >
+                <span className="text-sm font-semibold text-slate-700">{title}</span>
+                <Pencil className="w-3 h-3 text-slate-300 group-hover:text-slate-500 transition-colors" />
+              </button>
+            )}
 
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 rounded-lg flex items-center justify-center shadow-md shadow-blue-500/20">
-                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-              </div>
-
-              {isEditingTitle ? (
-                <input
-                  type="text"
-                  value={titleInput}
-                  onChange={(e) => setTitleInput(e.target.value)}
-                  onBlur={handleTitleBlur}
-                  onKeyDown={handleTitleKeyDown}
-                  autoFocus
-                  className="h-7 w-48 text-sm font-semibold bg-slate-100 border border-blue-300 rounded px-2 outline-none focus:ring-2 focus:ring-blue-500/20"
-                />
-              ) : (
-                <button
-                  onClick={() => { setTitleInput(title); setIsEditingTitle(true); }}
-                  className="flex items-center gap-1.5 h-8 px-2 -mx-2 rounded hover:bg-slate-100 transition-colors group"
-                >
-                  <span className="text-sm font-semibold text-slate-800">{title}</span>
-                  <Pencil className="w-3 h-3 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity" />
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* 中间 - 状态 */}
-          <div className="hidden md:flex items-center gap-4">
             <ThemeSelector themeId={themeId} onChange={onThemeChange} />
             <AutoSaveIndicator saving={saving} lastSaved={lastSaved} error={saveError} />
-
             {hasChanges && (
-              <div className="flex items-center gap-1.5 px-2 py-1 bg-amber-50 border border-amber-200 rounded text-[10px] font-medium text-amber-700">
-                <div className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-pulse" />
+              <span className="flex items-center gap-1 text-[10px] text-amber-600 font-medium">
+                <span className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-pulse" />
                 未保存
-              </div>
+              </span>
             )}
           </div>
 
           {/* 右侧 - 操作按钮 */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
+            {/* AI 一键优化 */}
+            {onFullOptimize && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    size="sm"
+                    onClick={onFullOptimize}
+                    className="h-7 px-3 text-[11px] font-medium bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white shadow-sm"
+                  >
+                    <Sparkles className="w-3 h-3 mr-1" />
+                    AI 一键优化
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>AI 智能优化整份简历的所有条目的措辞和关键词</TooltipContent>
+              </Tooltip>
+            )}
+
+            {/* 预览模式 */}
+            {onPreviewModeChange && previewMode !== undefined && (
+              <div className="flex items-center bg-slate-100 rounded-md p-0.5 ml-1">
+                {([
+                  { mode: 'split' as const, icon: PanelRight, label: '分屏' },
+                  { mode: 'full' as const, icon: Maximize2, label: '全屏预览' },
+                  { mode: 'hidden' as const, icon: Minimize2, label: '隐藏预览' },
+                ]).map(({ mode, icon: Icon, label }) => (
+                  <Tooltip key={mode}>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant={previewMode === mode ? 'default' : 'ghost'}
+                        size="sm"
+                        onClick={() => onPreviewModeChange(mode)}
+                        className={`h-6 px-2 text-[10px] ${previewMode === mode ? 'bg-white shadow-sm text-slate-700 hover:bg-white' : 'text-slate-400 hover:text-slate-600'}`}
+                      >
+                        <Icon className="w-3 h-3 mr-1" />
+                        {mode === 'split' ? label : ''}
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>{label}</TooltipContent>
+                  </Tooltip>
+                ))}
+              </div>
+            )}
+
+            {/* 保存 */}
             <Button
               size="sm"
               onClick={onSave}
               disabled={saving}
-              className="h-8 px-4 text-xs font-medium bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-md shadow-blue-500/20"
+              className="h-7 px-3 text-[11px] font-medium bg-slate-800 hover:bg-slate-700"
             >
               {saving ? (
-                <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                <Loader2 className="w-3 h-3 mr-1 animate-spin" />
               ) : (
-                <svg className="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
-                </svg>
+                <Check className="w-3 h-3 mr-1" />
               )}
               保存
             </Button>

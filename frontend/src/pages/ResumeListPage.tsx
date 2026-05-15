@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { resumeApi } from '@/lib/resumes';
@@ -19,11 +19,9 @@ import {
   Edit,
   FileText,
   FileUp,
-  Layers3,
   Plus,
   Search,
   Share2,
-  Sparkles,
   Trash2,
   Upload,
 } from 'lucide-react';
@@ -38,7 +36,11 @@ import ResumePreview from '@/components/ResumePreview';
 import { parseResumeData } from '@/lib/resumeData';
 import { themes } from '@/styles/resumeThemes';
 
-// 简历缩略图卡片
+// ─── ResumeThumbnail ───────────────────────────────────────────────────────
+
+const RESUME_BASE_WIDTH = 540;  // ResumePreview 的固定渲染宽度
+const RESUME_BASE_HEIGHT = 766; // ResumePreview 的固定渲染高度
+
 const ResumeThumbnail: React.FC<{
   resume: Resume;
   previewData: ResumeData | null;
@@ -47,95 +49,118 @@ const ResumeThumbnail: React.FC<{
   onShare?: () => void;
   onDuplicate?: () => void;
 }> = ({ resume, previewData, onEdit, onDelete, onShare, onDuplicate }) => {
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' });
-  };
-
   const theme = themes[resume.theme_id] || themes[0];
+  const cardRef = useRef<HTMLDivElement>(null);
+  const [cardWidth, setCardWidth] = useState(200);
+
+  const measure = useCallback(() => {
+    if (cardRef.current) {
+      const w = cardRef.current.getBoundingClientRect().width;
+      if (w > 0) setCardWidth(w);
+    }
+  }, []);
+
+  useEffect(() => {
+    measure();
+    const ro = new ResizeObserver(measure);
+    if (cardRef.current) ro.observe(cardRef.current);
+    return () => ro.disconnect();
+  }, [measure]);
+
+  // 动态计算缩放比例：卡片宽度 ÷ 简历基准宽度
+  const scale = cardWidth / RESUME_BASE_WIDTH;
+  const scaledHeight = RESUME_BASE_HEIGHT * scale;
 
   return (
-    <div className="group relative">
-      {/* 操作按钮 */}
-      <div className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
-        <button
-          onClick={onEdit}
-          className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg shadow-lg flex items-center gap-1"
-        >
-          <Edit className="w-3 h-3" />
-          编辑
-        </button>
-        {onShare && (
-          <button
-            onClick={onShare}
-            className="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 text-xs font-medium rounded-lg shadow-lg flex items-center gap-1"
-          >
-            <Share2 className="w-3 h-3" />
-            分享
-          </button>
-        )}
-        {onDuplicate && (
-          <button
-            onClick={onDuplicate}
-            className="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 text-xs font-medium rounded-lg shadow-lg flex items-center gap-1"
-          >
-            <Copy className="w-3 h-3" />
-            复制
-          </button>
-        )}
-        <button
-          onClick={onDelete}
-          className="px-3 py-1.5 bg-white hover:bg-red-50 text-red-600 text-xs font-medium rounded-lg shadow-lg flex items-center gap-1"
-        >
-          <Trash2 className="w-3 h-3" />
-        </button>
-      </div>
+    <div className="group cursor-pointer" onClick={onEdit}>
+      {/* 纸张阴影容器 */}
+      <div className="relative">
+        <div className="absolute inset-0 translate-y-1.5 translate-x-0.5 bg-slate-300/30 rounded-sm" />
+        <div className="absolute inset-0 translate-y-1 translate-x-0 bg-slate-200/40 rounded-sm" />
 
-      {/* 模板标签 */}
-      <div className="absolute top-2 left-2 z-10">
-        <span
-          className="px-2 py-1 rounded-md text-[10px] font-medium shadow"
-          style={{
-            backgroundColor: theme.colors.header,
-            color: '#fff',
-          }}
+        {/* 简历预览主体 — 高度由动态缩放决定 */}
+        <div
+          ref={cardRef}
+          className="relative bg-white shadow-lg shadow-slate-900/8 ring-1 ring-slate-900/5 rounded-sm overflow-hidden"
+          style={{ height: scaledHeight || 'auto' }}
         >
-          {theme.name}
-        </span>
-      </div>
-
-      {/* 简历渲染 */}
-      <div className="bg-white rounded-lg shadow-md overflow-hidden border border-slate-200/60 hover:shadow-xl hover:shadow-slate-900/10 transition-all duration-200">
-        <div className="relative" style={{ paddingTop: '141.4%' /* A4 ratio */ }}>
           {previewData ? (
-            <div className="absolute inset-0 flex items-center justify-center overflow-hidden bg-slate-50">
-              <div
-                className="transform scale-[0.25] origin-center pointer-events-none"
-                style={{ width: '400%', height: '400%' }}
-              >
-                <ResumePreview data={previewData} themeId={resume.theme_id} />
-              </div>
-            </div>
+            <ResumePreview data={previewData} themeId={resume.theme_id} scale={scale} />
           ) : (
-            <div className="absolute inset-0 flex items-center justify-center bg-slate-100 text-slate-400">
+            <div className="absolute inset-0 flex items-center justify-center bg-slate-50 text-slate-300">
               <div className="text-center">
-                <FileText className="w-8 h-8 mx-auto mb-1 opacity-40" />
-                <span className="text-xs">加载失败</span>
+                <FileText className="w-6 h-6 mx-auto mb-1 opacity-30" />
+                <span className="text-[10px]">加载中</span>
               </div>
             </div>
           )}
-        </div>
 
-        {/* 底部信息 */}
-        <div className="p-3 border-t border-slate-100">
-          <div className="flex items-center justify-between">
-            <div className="min-w-0 flex-1">
-              <h3 className="text-sm font-medium text-slate-800 truncate group-hover:text-blue-600 transition-colors">
-                {resume.title}
-              </h3>
-              <div className="flex items-center gap-1 text-xs text-slate-400 mt-0.5">
+          {/* hover 遮罩 + 操作按钮 */}
+          <div className="absolute inset-0 bg-slate-900/0 group-hover:bg-slate-900/25 transition-all duration-300 flex flex-col items-center justify-center gap-2">
+            <div className="opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center gap-1.5">
+              <button
+                onClick={(e) => { e.stopPropagation(); onEdit(); }}
+                className="px-3 py-1.5 bg-white/95 backdrop-blur-sm text-slate-700 text-xs font-medium rounded-lg shadow-lg flex items-center gap-1.5 hover:bg-white hover:text-blue-600 transition-colors"
+              >
+                <Edit className="w-3.5 h-3.5" />
+                编辑
+              </button>
+              {onShare && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); onShare(); }}
+                  className="px-3 py-1.5 bg-white/95 backdrop-blur-sm text-slate-700 text-xs font-medium rounded-lg shadow-lg flex items-center gap-1.5 hover:bg-white hover:text-green-600 transition-colors"
+                >
+                  <Share2 className="w-3.5 h-3.5" />
+                  分享
+                </button>
+              )}
+              {onDuplicate && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); onDuplicate(); }}
+                  className="px-3 py-1.5 bg-white/95 backdrop-blur-sm text-slate-700 text-xs font-medium rounded-lg shadow-lg flex items-center gap-1.5 hover:bg-white hover:text-indigo-600 transition-colors"
+                >
+                  <Copy className="w-3.5 h-3.5" />
+                  复制
+                </button>
+              )}
+              <button
+                onClick={(e) => { e.stopPropagation(); onDelete(); }}
+                className="px-2.5 py-1.5 bg-white/95 backdrop-blur-sm text-slate-700 text-xs font-medium rounded-lg shadow-lg flex items-center gap-1 hover:bg-white hover:text-red-600 transition-colors"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 底部信息 */}
+      <div className="mt-2.5 px-0.5">
+        <div className="flex items-center justify-between">
+          <div className="min-w-0 flex-1">
+            <h3 className="text-[13px] font-semibold text-slate-700 truncate group-hover:text-blue-600 transition-colors">
+              {resume.title}
+            </h3>
+            <div className="flex items-center gap-3 mt-0.5">
+              <div className="flex items-center gap-1 text-[11px] text-slate-400">
                 <Clock className="w-3 h-3" />
-                {formatDate(resume.updated_at || resume.created_at)}
+                {(() => {
+                  const d = new Date(resume.updated_at || resume.created_at);
+                  const now = new Date();
+                  const diffMs = now.getTime() - d.getTime();
+                  const diffDays = Math.floor(diffMs / 86400000);
+                  if (diffDays === 0) return '今天';
+                  if (diffDays === 1) return '昨天';
+                  if (diffDays < 7) return `${diffDays} 天前`;
+                  return d.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' });
+                })()}
+              </div>
+              <div className="flex items-center gap-1">
+                <span
+                  className="w-1.5 h-1.5 rounded-full"
+                  style={{ backgroundColor: theme.colors.accent }}
+                />
+                <span className="text-[11px] text-slate-400">{theme.name}</span>
               </div>
             </div>
           </div>
@@ -145,7 +170,8 @@ const ResumeThumbnail: React.FC<{
   );
 };
 
-// 导入对话框
+// ─── Import Dialog ────────────────────────────────────────────────────────
+
 const ImportResumeDialog: React.FC<{
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -262,7 +288,8 @@ const ImportResumeDialog: React.FC<{
   );
 };
 
-// 分享对话框
+// ─── Share Dialog ─────────────────────────────────────────────────────────
+
 const ShareDialog: React.FC<{
   resume: Resume | null;
   open: boolean;
@@ -353,6 +380,8 @@ const ShareDialog: React.FC<{
   );
 };
 
+// ─── Main Page ────────────────────────────────────────────────────────────
+
 export default function ResumeListPage() {
   const [resumes, setResumes] = useState<Resume[]>([]);
   const [previewDataMap, setPreviewDataMap] = useState<Record<number, ResumeData>>({});
@@ -380,7 +409,6 @@ export default function ResumeListPage() {
       });
       setResumes(res.data.list || []);
 
-      // 加载所有简历的预览数据
       const list = res.data.list || [];
       const dataMap: Record<number, ResumeData> = {};
       await Promise.all(
@@ -444,12 +472,8 @@ export default function ResumeListPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-100 flex items-center justify-center">
-        <div className="relative">
-          <div className="w-20 h-20 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 rounded-2xl flex items-center justify-center shadow-2xl shadow-blue-500/30 animate-pulse">
-            <FileText className="w-10 h-10 text-white" />
-          </div>
-        </div>
+      <div className="min-h-screen bg-[#f5f3f0] flex items-center justify-center">
+        <div className="w-16 h-16 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin" />
       </div>
     );
   }
@@ -463,201 +487,138 @@ export default function ResumeListPage() {
   }).length;
 
   return (
-    <div className="min-h-screen bg-slate-100">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
-        {/* 头部区域 */}
-        <div className="relative mb-8">
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-slate-200/60 p-6 shadow-sm">
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-5">
-                <div className="relative">
-                  <div className="w-16 h-16 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 rounded-2xl flex items-center justify-center shadow-xl shadow-blue-500/20">
-                    <Layers3 className="w-8 h-8 text-white" />
-                  </div>
-                  <div className="absolute -bottom-1.5 -right-1.5 w-7 h-7 bg-white rounded-xl shadow-lg flex items-center justify-center">
-                    <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-                  </div>
-                </div>
-                <div>
-                  <h1 className="text-2xl font-bold bg-gradient-to-r from-slate-800 via-slate-700 to-slate-600 bg-clip-text text-transparent">
-                    简历工作台
-                  </h1>
-                  <p className="text-sm text-slate-500 mt-0.5">管理、创建、导出你的专业简历</p>
-                </div>
-              </div>
+    <div className="min-h-screen bg-[#f5f3f0]">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* 头部 */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-800">简历工作台</h1>
+            <p className="text-sm text-slate-500 mt-0.5">管理你的简历，选择模板并导出 PDF</p>
+          </div>
 
-              {/* 统计卡片 */}
-              <div className="hidden md:flex items-center gap-3">
-                <div className="group relative px-4 py-3 bg-white/60 backdrop-blur-sm rounded-xl border border-slate-200/60 shadow-sm hover:shadow-md hover:border-blue-200/50 transition-all duration-300">
-                  <div className="flex items-center gap-3">
-                    <div className="w-11 h-11 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                      <FileText className="w-5 h-5 text-blue-500" />
-                    </div>
-                    <div>
-                      <p className="text-[11px] text-slate-400 font-medium uppercase tracking-wide">简历总数</p>
-                      <p className="text-xl font-bold text-slate-800">{totalResumes}</p>
-                    </div>
-                  </div>
-                </div>
-                <div className="group relative px-4 py-3 bg-white/60 backdrop-blur-sm rounded-xl border border-slate-200/60 shadow-sm hover:shadow-md hover:border-emerald-200/50 transition-all duration-300">
-                  <div className="flex items-center gap-3">
-                    <div className="w-11 h-11 bg-gradient-to-br from-emerald-50 to-teal-50 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                      <Sparkles className="w-5 h-5 text-emerald-500" />
-                    </div>
-                    <div>
-                      <p className="text-[11px] text-slate-400 font-medium uppercase tracking-wide">本周新建</p>
-                      <p className="text-xl font-bold text-slate-800">{thisWeekCount}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+          <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setImportDialogOpen(true)}
+              className="h-9 px-3.5 bg-white/80 border-slate-200/80 text-slate-600 hover:bg-white hover:border-blue-300 text-sm font-medium"
+            >
+              <Upload className="w-4 h-4 mr-1.5" />
+              导入 PDF
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleCreateResume}
+              className="h-9 px-4 bg-slate-800 hover:bg-slate-700 text-sm font-medium"
+            >
+              <Plus className="w-4 h-4 mr-1.5" />
+              新建简历
+            </Button>
           </div>
         </div>
 
         {/* 操作栏 */}
-        <div className="relative mb-6">
-          <div className="bg-white/60 backdrop-blur-sm rounded-2xl border border-slate-200/60 p-4 shadow-sm">
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-3 flex-1">
-                {/* 搜索框 */}
-                <div className="relative flex-1 max-w-sm">
-                  <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                  <Input
-                    placeholder="搜索简历..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="h-10 pl-10 pr-4 bg-white/80 border-slate-200/80 focus:border-blue-400 focus:ring-blue-100 rounded-xl text-sm"
-                  />
-                </div>
-                {/* 模板过滤 */}
-                <Select value={filterTheme === undefined ? 'all' : String(filterTheme)} onValueChange={(v) => setFilterTheme(v === 'all' ? undefined : Number(v))}>
-                  <SelectTrigger className="h-10 w-36 bg-white/80 border-slate-200/80 rounded-xl text-sm">
-                    <SelectValue placeholder="模板" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">全部模板</SelectItem>
-                    {themes.map((theme, idx) => (
-                      <SelectItem key={idx} value={String(idx)}>{theme.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {/* 排序 */}
-                <Select value={sortBy || 'updated_at_desc'} onValueChange={(v) => setSortBy(v as ResumeListParams['sort'])}>
-                  <SelectTrigger className="h-10 w-40 bg-white/80 border-slate-200/80 rounded-xl text-sm">
-                    <SelectValue placeholder="排序" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="updated_at_desc">最近更新</SelectItem>
-                    <SelectItem value="updated_at_asc">最早更新</SelectItem>
-                    <SelectItem value="created_at_desc">最新创建</SelectItem>
-                    <SelectItem value="created_at_asc">最早创建</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setImportDialogOpen(true)}
-                  className="h-10 px-4 bg-white/80 border-slate-200/80 text-slate-700 hover:bg-white hover:border-blue-300 text-sm font-medium shadow-sm"
-                >
-                  <Upload className="w-4 h-4 mr-2" />
-                  导入 PDF
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={handleCreateResume}
-                  className="h-10 px-5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-sm font-semibold shadow-lg shadow-blue-500/25"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  新建简历
-                </Button>
-              </div>
-            </div>
+        <div className="flex items-center gap-3 mb-6">
+          <div className="relative flex-1 max-w-xs">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <Input
+              placeholder="搜索简历..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="h-9 pl-9 pr-3 bg-white/90 border-slate-200/80 focus:border-slate-400 focus:ring-slate-100 rounded-lg text-sm"
+            />
           </div>
+          <Select
+            value={filterTheme === undefined ? 'all' : String(filterTheme)}
+            onValueChange={(v) => setFilterTheme(v === 'all' ? undefined : Number(v))}
+          >
+            <SelectTrigger className="h-9 w-32 bg-white/90 border-slate-200/80 rounded-lg text-sm">
+              <SelectValue placeholder="模板" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">全部模板</SelectItem>
+              {themes.map((theme, idx) => (
+                <SelectItem key={idx} value={String(idx)}>{theme.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select
+            value={sortBy || 'updated_at_desc'}
+            onValueChange={(v) => setSortBy(v as ResumeListParams['sort'])}
+          >
+            <SelectTrigger className="h-9 w-32 bg-white/90 border-slate-200/80 rounded-lg text-sm">
+              <SelectValue placeholder="排序" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="updated_at_desc">最近更新</SelectItem>
+              <SelectItem value="updated_at_asc">最早更新</SelectItem>
+              <SelectItem value="created_at_desc">最新创建</SelectItem>
+              <SelectItem value="created_at_asc">最早创建</SelectItem>
+            </SelectContent>
+          </Select>
+          <span className="text-xs text-slate-400 ml-auto">
+            {totalResumes} 份简历 · 本周 {thisWeekCount} 份
+          </span>
         </div>
 
         {/* 空状态 */}
         {resumes.length === 0 ? (
-          <div className="relative bg-white/70 backdrop-blur-sm rounded-3xl border border-slate-200/60 p-20 text-center shadow-sm">
-            <div className="max-w-md mx-auto">
-              <div className="relative inline-block mb-8">
-                <div className="w-24 h-24 bg-gradient-to-br from-slate-100 to-slate-200 rounded-3xl flex items-center justify-center mx-auto">
-                  <FileText className="w-12 h-12 text-slate-400" />
-                </div>
-                <div className="absolute -top-2 -right-2 w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/30">
-                  <Plus className="w-5 h-5 text-white" />
-                </div>
-              </div>
-              <h3 className="text-xl font-bold text-slate-700 mb-3">还没有简历</h3>
-              <p className="text-sm text-slate-500 mb-10 max-w-sm mx-auto leading-relaxed">
-                创建你的第一份专业简历，或从 PDF 导入现有简历开始
-              </p>
-              <div className="flex items-center justify-center gap-4">
-                <Button
-                  variant="outline"
-                  size="lg"
-                  onClick={() => setImportDialogOpen(true)}
-                  className="h-12 px-6 bg-white border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-blue-300 text-sm font-medium shadow-sm"
-                >
-                  <Upload className="w-5 h-5 mr-2.5" />
-                  导入 PDF
-                </Button>
-                <Button
-                  size="lg"
-                  onClick={handleCreateResume}
-                  className="h-12 px-6 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-sm font-semibold shadow-lg shadow-blue-500/25"
-                >
-                  <Plus className="w-5 h-5 mr-2.5" />
-                  新建简历
-                </Button>
-              </div>
+          <div className="text-center py-24">
+            <div className="w-20 h-20 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-5">
+              <FileText className="w-10 h-10 text-slate-300" />
+            </div>
+            <h3 className="text-lg font-semibold text-slate-600 mb-2">还没有简历</h3>
+            <p className="text-sm text-slate-400 mb-8">创建你的第一份专业简历，或从 PDF 导入</p>
+            <div className="flex items-center justify-center gap-3">
+              <Button
+                variant="outline"
+                onClick={() => setImportDialogOpen(true)}
+                className="h-10 px-5 bg-white border-slate-200 text-slate-600 hover:bg-slate-50 text-sm font-medium"
+              >
+                <Upload className="w-4 h-4 mr-2" />
+                导入 PDF
+              </Button>
+              <Button
+                onClick={handleCreateResume}
+                className="h-10 px-5 bg-slate-800 hover:bg-slate-700 text-sm font-medium"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                新建简历
+              </Button>
             </div>
           </div>
         ) : (
-          <>
-            <span className="text-sm text-slate-500 mb-4 block">{resumes.length} 份简历</span>
+          /* 简历网格 */
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+            {resumes.map((resume) => (
+              <ResumeThumbnail
+                key={resume.id}
+                resume={resume}
+                previewData={previewDataMap[resume.id]}
+                onEdit={() => navigate(`/editor/${resume.id}`)}
+                onDelete={() => handleDeleteResume(resume.id)}
+                onDuplicate={() => handleDuplicateResume(resume)}
+                onShare={() => {
+                  setShareResume(resume);
+                  setShareDialogOpen(true);
+                }}
+              />
+            ))}
 
-            {/* 简历网格 - 直接渲染简历内容 */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {resumes.map((resume) => (
-                <ResumeThumbnail
-                  key={resume.id}
-                  resume={resume}
-                  previewData={previewDataMap[resume.id]}
-                  onEdit={() => navigate(`/editor/${resume.id}`)}
-                  onDelete={() => handleDeleteResume(resume.id)}
-                  onDuplicate={() => handleDuplicateResume(resume)}
-                  onShare={() => {
-                    setShareResume(resume);
-                    setShareDialogOpen(true);
-                  }}
-                />
-              ))}
-
-              {/* 新建卡片 */}
-              <div
-                onClick={handleCreateResume}
-                className="cursor-pointer flex flex-col items-center justify-center bg-white/50 border-2 border-dashed border-slate-300 hover:border-blue-400 hover:bg-blue-50/50 rounded-lg transition-all duration-300 min-h-[320px]"
-              >
-                <div className="w-16 h-16 bg-gradient-to-br from-slate-100 to-slate-200 group-hover:from-blue-100 group-hover:to-indigo-100 rounded-2xl flex items-center justify-center mb-4 transition-all duration-300 group-hover:scale-110">
-                  <Plus className="w-8 h-8 text-slate-400 group-hover:text-blue-500 transition-colors" />
-                </div>
-                <p className="text-base font-semibold text-slate-500 group-hover:text-blue-600 transition-colors">新建简历</p>
-                <p className="text-sm text-slate-400 mt-1">从空白开始创建</p>
-              </div>
+            {/* 新建卡片 */}
+            <div
+              onClick={handleCreateResume}
+              className="group cursor-pointer flex flex-col items-center justify-center bg-white/60 border-2 border-dashed border-slate-300 hover:border-slate-400 hover:bg-white/90 transition-all rounded-sm min-h-[300px]"
+            >
+              <Plus className="w-8 h-8 text-slate-300 group-hover:text-slate-500 transition-colors mb-2" />
+              <span className="text-sm text-slate-400 group-hover:text-slate-600 transition-colors">新建简历</span>
             </div>
-          </>
+          </div>
         )}
       </div>
 
       <ImportResumeDialog open={importDialogOpen} onOpenChange={setImportDialogOpen} onImport={loadResumes} />
-      <ShareDialog
-        resume={shareResume}
-        open={shareDialogOpen}
-        onOpenChange={setShareDialogOpen}
-      />
+      <ShareDialog resume={shareResume} open={shareDialogOpen} onOpenChange={setShareDialogOpen} />
     </div>
   );
 }

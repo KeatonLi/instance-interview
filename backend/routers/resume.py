@@ -27,7 +27,7 @@ from schemas.resume import (
 )
 from services import resume_service
 from services.ai_service import optimize_single_content, optimize_full_resume
-from services.pdf_parser import ResumePDFParser, parse_pdf
+from services.resume_ai_parser import parse_resume_with_ai
 from services.pdf_generator import generate_resume_pdf
 from middleware.auth import auth_required
 
@@ -114,9 +114,12 @@ async def export_resume_pdf(
             'languages': json.loads(resume.get('languages') or '[]') or [],
         }
 
-    # 生成 PDF
+    # 生成 PDF（传入 theme_id 选择模板）
+    theme_id = resume.get('theme_id', 0) or 0
+    if theme_id < 0 or theme_id > 4:
+        theme_id = 0
     try:
-        pdf_data = generate_resume_pdf(resume_data, resume.get('title', 'resume'))
+        pdf_data = generate_resume_pdf(resume_data, resume.get('title', 'resume'), theme_id)
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -240,29 +243,40 @@ async def import_resume(
             detail={"code": 1, "message": "文件大小不能超过 10MB"}
         )
 
-    # 解析 PDF
-    parser = ResumePDFParser()
-    parsed, err_msg = parser.parse_pdf(content)
-
-    if err_msg:
+    # 1. 从 PDF 提取原始文本
+    from services.pdf_parser import PDFParser
+    raw_text = PDFParser.extract_text_from_pdf(content)
+    if not raw_text:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail={"code": 1, "message": err_msg}
+            detail={"code": 1, "message": "无法从 PDF 中提取文本内容，请确认文件为文字型 PDF"}
         )
 
-    # 转换为字典格式
-    parsed_dict = parser.to_dict(parsed)
+    # 2. LLM 结构化提取
+    try:
+        parsed_dict = await parse_resume_with_ai(raw_text)
+        print(f"[简历导入] LLM 解析成功")
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail={"code": 1, "message": str(e)}
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"code": 1, "message": f"AI 解析失败: {str(e)[:200]}"}
+        )
 
-    # 创建简历
+    # 3. 创建简历
     result = await resume_service.create_resume(
         db=db,
         user_id=user_id,
-        title=f"{parsed_dict['personal_info'].get('name', '新简历')}的简历",
+        title=f"{parsed_dict['personalInfo'].get('name', '新简历')}的简历",
         theme_id=0,
         resume_type="full",
-        personal_info=parsed_dict["personal_info"],
+        personal_info=parsed_dict["personalInfo"],
         education=parsed_dict["education"],
-        work_experience=parsed_dict["work_experience"],
+        work_experience=parsed_dict["workExperience"],
         projects=parsed_dict["projects"],
         skills=parsed_dict["skills"],
         awards=parsed_dict["awards"],
@@ -277,18 +291,18 @@ async def import_resume(
 
     return ResumeImportResponse(
         code=0,
-        message="导入成功",
+        message="导入成功（AI 智能解析）",
         data={
             "resume": result.get("data"),
-            "raw_text": parsed.raw_text,
+            "raw_text": raw_text,
             "parsed": {
-                "personal_info": parsed.personal_info,
-                "education": parsed.education,
-                "work_experience": parsed.work_experience,
-                "projects": parsed.projects,
-                "skills": parsed.skills,
-                "awards": parsed.awards,
-                "languages": parsed.languages,
+                "personal_info": parsed_dict["personalInfo"],
+                "education": parsed_dict["education"],
+                "work_experience": parsed_dict["workExperience"],
+                "projects": parsed_dict["projects"],
+                "skills": parsed_dict["skills"],
+                "awards": parsed_dict["awards"],
+                "languages": parsed_dict["languages"],
             }
         }
     )

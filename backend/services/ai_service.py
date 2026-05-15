@@ -133,34 +133,32 @@ class AIService:
 
 只返回 JSON，不要有其他内容。"""
 
-    async def _call_api(self, prompt: str) -> str:
-        """调用 MiniMax API
+    async def chat(
+        self,
+        messages: List[Dict[str, str]],
+        temperature: float = 0.7,
+        max_tokens: int = 4096,
+        timeout: float = 120.0,
+    ) -> str:
+        """通用 LLM 调用（MiniMax M2.5，OpenAI 兼容格式）
 
         Args:
-            prompt: 提示词
+            messages: [{"role":"system","content":"..."}, {"role":"user","content":"..."}]
+            temperature: 生成温度
+            max_tokens: 最大 token 数
+            timeout: 超时秒数
 
         Returns:
-            API 返回的优化内容
+            LLM 回复的文本内容
         """
         if not self.api_key:
-            raise ValueError("ANTHROPIC_API_KEY not set")
-
-        messages = [
-            {
-                "role": "system",
-                "content": "你是一个专业的简历优化助手，擅长帮助程序员优化简历。你需要优化简历内容，使其更专业、更有吸引力。注意：1. 使用强有力的动词开头 2. 量化成果 3. 突出技术能力 4. 保持简洁专业"
-            },
-            {
-                "role": "user",
-                "content": prompt
-            }
-        ]
+            raise ValueError("ANTHROPIC_API_KEY 未配置，请在 .env 中设置")
 
         request_data = {
             "model": self.model,
             "messages": messages,
-            "temperature": self.temperature,
-            "max_tokens": self.max_tokens
+            "temperature": temperature,
+            "max_tokens": max_tokens
         }
 
         headers = {
@@ -168,35 +166,39 @@ class AIService:
             "Authorization": f"Bearer {self.api_key}"
         }
 
-        async with httpx.AsyncClient(timeout=60.0) as client:
-            try:
-                response = await client.post(
-                    self.api_url,
-                    json=request_data,
-                    headers=headers
-                )
+        async with httpx.AsyncClient(timeout=timeout) as client:
+            response = await client.post(
+                self.api_url,
+                json=request_data,
+                headers=headers
+            )
 
-                if response.status_code != 200:
-                    error_msg = f"API error: {response.status_code} - {response.text}"
-                    raise Exception(error_msg)
+            if response.status_code != 200:
+                error_msg = f"MiniMax API error: HTTP {response.status_code} - {response.text[:300]}"
+                raise RuntimeError(error_msg)
 
-                result = response.json()
+            result = response.json()
+            if "choices" in result and len(result["choices"]) > 0:
+                return result["choices"][0]["message"]["content"]
+            elif "choices" in result and len(result["choices"]) == 0:
+                raise RuntimeError("MiniMax 返回空响应")
+            else:
+                raise RuntimeError(f"Unexpected API response: {result}")
 
-                # 解析 MiniMax API 响应格式
-                if "choices" in result and len(result["choices"]) > 0:
-                    return result["choices"][0]["message"]["content"]
-                elif "choices" in result and len(result["choices"]) == 0:
-                    raise Exception("no response from AI")
-                else:
-                    # 兼容其他可能的响应格式
-                    if "text" in result:
-                        return result["text"]
-                    raise Exception(f"unexpected response format: {result}")
-
-            except httpx.TimeoutException:
-                raise Exception("API request timeout")
-            except httpx.RequestError as e:
-                raise Exception(f"API request failed: {str(e)}")
+    async def _call_api(self, prompt: str) -> str:
+        """内部方法：简历优化专用 LLM 调用（保持向后兼容）"""
+        return await self.chat(
+            messages=[
+                {
+                    "role": "system",
+                    "content": "你是一个专业的简历优化助手，擅长帮助程序员优化简历。你需要优化简历内容，使其更专业、更有吸引力。注意：1. 使用强有力的动词开头 2. 量化成果 3. 突出技术能力 4. 保持简洁专业"
+                },
+                {"role": "user", "content": prompt}
+            ],
+            temperature=self.temperature,
+            max_tokens=self.max_tokens,
+            timeout=60.0,
+        )
 
     async def optimize_resume(
         self,
